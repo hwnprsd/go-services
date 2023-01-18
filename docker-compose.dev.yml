@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: "rabbitmq"
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - flaq_net
+  mailer:
+    container_name: "flaq-mailer"
+    build:
+      context: ./mailer
+    environment:
+      AMQP_SERVER_URL: amqp://rabbitmq:5672
+    restart: always
+    networks:
+      - flaq_net
+
+  api:
+    container_name: "flaq-api"
+    build:
+      context: ./api
+    environment:
+      AMQP_SERVER_URL: amqp://rabbitmq:5672
+    restart: always
+    ports:
+      - 3000:3000
+    networks:
+      - flaq_net
+
+networks:
+  flaq_net:
+    driver: bridge
+
+x-aws-cloudformation:
+  Resources:
+    WebappTCP443Listener:
+      Type: "AWS::ElasticLoadBalancingV2::Listener"
+      Properties:
+        LoadBalancerArn:
+          Ref: LoadBalancer
+        DefaultActions:
+          - ForwardConfig:
+              TargetGroups:
+                - TargetGroupArn:
+                    Ref: ApiTCP3000TargetGroup
+            Type: forward
+        Certificates:
+          - CertificateArn: "arn:aws:acm:ap-south-1:312136753954:certificate/f5763aa6-5c97-4b40-9b7b-2aa01e7ac0a1"
+        Protocol: TLS
+        Port: 443
+# vpc-0ddb1d66
+#
+#  subnet-5f816e34
+# |  subnet-f8781f83
+# |  subnet-c4aaf788
+#

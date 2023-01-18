@@ -1,0 +1,339 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  ApiService:
+    DependsOn:
+      - ApiTCP80Listener
+    Properties:
+      Cluster:
+        Fn::GetAtt:
+          - Cluster
+          - Arn
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DeploymentController:
+        Type: ECS
+      DesiredCount: 1
+      LaunchType: FARGATE
+      LoadBalancers:
+        - ContainerName: api
+          ContainerPort: 80
+          TargetGroupArn:
+            Ref: ApiTCP80TargetGroup
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - Ref: FlaqnetNetwork
+          Subnets:
+            - subnet-5f816e34
+            - subnet-f8781f83
+            - subnet-c4aaf788
+      PlatformVersion: 1.4.0
+      PropagateTags: SERVICE
+      SchedulingStrategy: REPLICA
+      ServiceRegistries:
+        - RegistryArn:
+            Fn::GetAtt:
+              - ApiServiceDiscoveryEntry
+              - Arn
+      Tags:
+        - Key: com.docker.compose.project
+          Value: go-services
+        - Key: com.docker.compose.service
+          Value: api
+      TaskDefinition:
+        Ref: ApiTaskDefinition
+    Type: AWS::ECS::Service
+  ApiServiceDiscoveryEntry:
+    Properties:
+      Description: '"api" service discovery entry in Cloud Map'
+      DnsConfig:
+        DnsRecords:
+          - TTL: 60
+            Type: A
+        RoutingPolicy: MULTIVALUE
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+      Name: api
+      NamespaceId:
+        Ref: CloudMap
+    Type: AWS::ServiceDiscovery::Service
+  ApiTCP80Listener:
+    Properties:
+      DefaultActions:
+        - ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn:
+                  Ref: ApiTCP80TargetGroup
+          Type: forward
+      LoadBalancerArn:
+        Ref: LoadBalancer
+      Port: 80
+      Protocol: HTTP
+    Type: AWS::ElasticLoadBalancingV2::Listener
+  ApiTCP80TargetGroup:
+    Properties:
+      Port: 80
+      Protocol: HTTP
+      Tags:
+        - Key: com.docker.compose.project
+          Value: go-services
+      TargetType: ip
+      VpcId: vpc-0ddb1d66
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  ApiTaskDefinition:
+    Properties:
+      ContainerDefinitions:
+        - Command:
+            - ap-south-1.compute.internal
+            - go-services.local
+          Essential: false
+          Image: docker/ecs-searchdomain-sidecar:1.0
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: flaqloggroup
+              awslogs-region: ap-south-1
+              awslogs-stream-prefix: go-services
+          Name: Api_ResolvConf_InitContainer
+        - DependsOn:
+            - Condition: SUCCESS
+              ContainerName: Api_ResolvConf_InitContainer
+          Environment:
+            - Name: AMQP_SERVER_URL
+              Value: amqps://flaqbroker:flaqbroker%402022@b-d742427e-d550-493e-9773-9c76714ff9da.mq.ap-south-1.amazonaws.com:5671
+          Essential: true
+          Image: 312136753954.dkr.ecr.ap-south-1.amazonaws.com/flaq-api:latest@sha256:891eba9e5166267e70cec9c235f8381b45fef7dd1d76f3ecadd51aa90ab7d644
+          LinuxParameters: {}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: flaqloggroup
+              awslogs-region: ap-south-1
+              awslogs-stream-prefix: go-services
+          Name: api
+          PortMappings:
+            - ContainerPort: 80
+              HostPort: 80
+              Protocol: tcp
+      Cpu: "256"
+      ExecutionRoleArn:
+        Ref: ApiTaskExecutionRole
+      Family: go-services-api
+      Memory: "512"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+    Type: AWS::ECS::TaskDefinition
+  ApiTaskExecutionRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Condition: {}
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+      Tags:
+        - Key: com.docker.compose.project
+          Value: go-services
+        - Key: com.docker.compose.service
+          Value: api
+    Type: AWS::IAM::Role
+  CloudMap:
+    Properties:
+      Description: Service Map for Docker Compose project go-services
+      Name: go-services.local
+      Vpc: vpc-0ddb1d66
+    Type: AWS::ServiceDiscovery::PrivateDnsNamespace
+  Cluster:
+    Properties:
+      ClusterName: go-services
+      Tags:
+        - Key: com.docker.compose.project
+          Value: go-services
+    Type: AWS::ECS::Cluster
+  Flaqnet80Ingress:
+    Properties:
+      CidrIp: 0.0.0.0/0
+      Description: api:80/tcp on flaq_net network
+      FromPort: 80
+      GroupId:
+        Ref: FlaqnetNetwork
+      IpProtocol: TCP
+      ToPort: 80
+    Type: AWS::EC2::SecurityGroupIngress
+  FlaqnetNetwork:
+    Properties:
+      GroupDescription: go-services Security Group for flaq_net network
+      Tags:
+        - Key: com.docker.compose.project
+          Value: go-services
+        - Key: com.docker.compose.network
+          Value: go-services_flaq_net
+      VpcId: vpc-0ddb1d66
+    Type: AWS::EC2::SecurityGroup
+  FlaqnetNetworkIngress:
+    Properties:
+      Description: Allow communication within network flaq_net
+      GroupId:
+        Ref: FlaqnetNetwork
+      IpProtocol: "-1"
+      SourceSecurityGroupId:
+        Ref: FlaqnetNetwork
+    Type: AWS::EC2::SecurityGroupIngress
+  LoadBalancer:
+    Properties:
+      Scheme: internet-facing
+      SecurityGroups:
+        - Ref: FlaqnetNetwork
+      Subnets:
+        - subnet-5f816e34
+        - subnet-f8781f83
+        - subnet-c4aaf788
+      Tags:
+        - Key: com.docker.compose.project
+          Value: go-services
+      Type: application
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+  LogGroup:
+    Properties:
+      LogGroupName: /docker-compose/go-services
+    Type: AWS::Logs::LogGroup
+  MailerService:
+    Properties:
+      Cluster:
+        Fn::GetAtt:
+          - Cluster
+          - Arn
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      DeploymentController:
+        Type: ECS
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - Ref: FlaqnetNetwork
+          Subnets:
+            - subnet-5f816e34
+            - subnet-f8781f83
+            - subnet-c4aaf788
+      PlatformVersion: 1.4.0
+      PropagateTags: SERVICE
+      SchedulingStrategy: REPLICA
+      ServiceRegistries:
+        - RegistryArn:
+            Fn::GetAtt:
+              - MailerServiceDiscoveryEntry
+              - Arn
+      Tags:
+        - Key: com.docker.compose.project
+          Value: go-services
+        - Key: com.docker.compose.service
+          Value: mailer
+      TaskDefinition:
+        Ref: MailerTaskDefinition
+    Type: AWS::ECS::Service
+  MailerServiceDiscoveryEntry:
+    Properties:
+      Description: '"mailer" service discovery entry in Cloud Map'
+      DnsConfig:
+        DnsRecords:
+          - TTL: 60
+            Type: A
+        RoutingPolicy: MULTIVALUE
+      HealthCheckCustomConfig:
+        FailureThreshold: 1
+      Name: mailer
+      NamespaceId:
+        Ref: CloudMap
+    Type: AWS::ServiceDiscovery::Service
+  MailerTaskDefinition:
+    Properties:
+      ContainerDefinitions:
+        - Command:
+            - ap-south-1.compute.internal
+            - go-services.local
+          Essential: false
+          Image: docker/ecs-searchdomain-sidecar:1.0
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Ref: LogGroup
+              awslogs-region:
+                Ref: AWS::Region
+              awslogs-stream-prefix: go-services
+          Name: Mailer_ResolvConf_InitContainer
+        - DependsOn:
+            - Condition: SUCCESS
+              ContainerName: Mailer_ResolvConf_InitContainer
+          Environment:
+            - Name: AMQP_SERVER_URL
+              Value: amqps://flaqbroker:flaqbroker%402022@b-d742427e-d550-493e-9773-9c76714ff9da.mq.ap-south-1.amazonaws.com:5671
+          Essential: true
+          Image: 312136753954.dkr.ecr.ap-south-1.amazonaws.com/flaq-mailer:latest@sha256:5817ea5e0c3311089ac7c7a7495443a3c2d399a31c22bf6c5cfeac638bf8c421
+          LinuxParameters: {}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Ref: LogGroup
+              awslogs-region:
+                Ref: AWS::Region
+              awslogs-stream-prefix: go-services
+          Name: mailer
+      Cpu: "256"
+      ExecutionRoleArn:
+        Ref: MailerTaskExecutionRole
+      Family: go-services-mailer
+      Memory: "512"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+    Type: AWS::ECS::TaskDefinition
+  MailerTaskExecutionRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Condition: {}
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+      Tags:
+        - Key: com.docker.compose.project
+          Value: go-services
+        - Key: com.docker.compose.service
+          Value: mailer
+    Type: AWS::IAM::Role
+  WebappTCP443Listener:
+    Properties:
+      Certificates:
+        - CertificateArn: arn:aws:acm:ap-south-1:312136753954:certificate/f5763aa6-5c97-4b40-9b7b-2aa01e7ac0a1
+      DefaultActions:
+        - ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn:
+                  Ref: ApiTCP80TargetGroup
+          Type: forward
+      LoadBalancerArn:
+        Ref: LoadBalancer
+      Port: 443
+      Protocol: TLS
+    Type: AWS::ElasticLoadBalancingV2::Listener
