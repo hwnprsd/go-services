@@ -21,40 +21,30 @@ services:
     restart: always
     networks:
       - flaq_net
+    depends_on:
+      - rabbitmq
+      - api
 
   api:
     container_name: "flaq-api"
     build:
       context: ./api
+      dockerfile: dev.Dockerfile
     environment:
       AMQP_SERVER_URL: amqp://rabbitmq:5672
     restart: always
     ports:
       - 3000:3000
+    volumes:
+      - ./api:/app
     networks:
       - flaq_net
+    depends_on:
+      - rabbitmq
 
 networks:
   flaq_net:
     driver: bridge
-
-x-aws-cloudformation:
-  Resources:
-    WebappTCP443Listener:
-      Type: "AWS::ElasticLoadBalancingV2::Listener"
-      Properties:
-        LoadBalancerArn:
-          Ref: LoadBalancer
-        DefaultActions:
-          - ForwardConfig:
-              TargetGroups:
-                - TargetGroupArn:
-                    Ref: ApiTCP3000TargetGroup
-            Type: forward
-        Certificates:
-          - CertificateArn: "arn:aws:acm:ap-south-1:312136753954:certificate/f5763aa6-5c97-4b40-9b7b-2aa01e7ac0a1"
-        Protocol: TLS
-        Port: 443
 # vpc-0ddb1d66
 #
 #  subnet-5f816e34

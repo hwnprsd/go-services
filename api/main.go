@@ -37,7 +37,6 @@ func NewEmailDeliveryTask(userEmail string, tmplID string) (*asynq.Task, error) 
 
 func NewImageGenTask(userName string) (*asynq.Task, error) {
 	payload, err := json.Marshal(ImageGenPayload{UserName: userName})
-
 	if err != nil {
 		return nil, err
 	}
