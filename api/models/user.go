@@ -7,7 +7,8 @@ import (
 )
 
 type User struct {
-	Id        uint      `json:"id,omitempty"	gorm:"primaryKey;autoIncrement"`
+	gorm.Model
+	ID        uint      `json:"id,omitempty"	gorm:"primaryKey;autoIncrement"`
 	Email     *string   `json:"email,omitempty"	gorm:"unique"`
 	CreatedAt time.Time `json:"created_at,omitempty"`
 }
