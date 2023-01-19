@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"flaq.club/api/app"
+	"flaq.club/api/controllers"
+	"flaq.club/api/database"
 	"flaq.club/api/messaging"
 	"github.com/hibiken/asynq"
 	"github.com/streadway/amqp"
@@ -65,10 +67,19 @@ func main() {
 
 	defer mq.MailerQueue.Channel.Close()
 
-	app := app.New(&mq)
-	app.SetupRoutes()
+	fiberApp := controllers.New()
 
-	log.Fatal(app.FiberApp.Listen(":3000"))
+	db := database.Connect()
+
+	app := app.New(&mq, fiberApp, db)
+
+	// Setup the controller to have all app properties
+	controller := controllers.Controller{
+		app,
+	}
+	controller.SetupRoutes()
+
+	log.Fatal(fiberApp.Listen(":3000"))
 
 	// client := asynq.NewClient(asynq.RedisClientOpt{Addr: "127.0.0.1:6379"})
 	// task, err := NewEmailDeliveryTask("ashwin@onpar.in", "some:template:id")

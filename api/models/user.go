@@ -7,10 +7,11 @@ import (
 )
 
 type User struct {
-	gorm.Model
-	ID        uint      `json:"id,omitempty"	gorm:"primaryKey;autoIncrement"`
-	Email     *string   `json:"email,omitempty"	gorm:"unique"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
+	ID        uint           `gorm:"primarykey" json:"id,omitempty"`
+	CreatedAt time.Time      `json:"created_at,omitempty"`
+	UpdatedAt time.Time      `json:"updated_at,omitempty"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	Email     *string        `json:"email,omitempty" gorm:"uniqueIndex"`
 }
 
 func MigrateUsers(db *gorm.DB) error {

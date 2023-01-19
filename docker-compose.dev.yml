@@ -1,6 +1,17 @@
 version: "3.8"
 
 services:
+  db:
+    image: postgres:15.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - flaq_net
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: "rabbitmq"
@@ -12,6 +23,21 @@ services:
       - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
     networks:
       - flaq_net
+
+  pgadmin:
+    container_name: pgadmin4
+    image: dpage/pgadmin4
+    restart: always
+    logging:
+      driver: none
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
+    networks:
+      - flaq_net
+
   mailer:
     container_name: "flaq-mailer"
     build:
@@ -32,6 +58,10 @@ services:
       dockerfile: dev.Dockerfile
     environment:
       AMQP_SERVER_URL: amqp://rabbitmq:5672
+      PG_HOST: db
+      PG_USERNAME: postgres
+      PG_PASSWORD: postgres
+      PG_PORT: 5432
     restart: always
     ports:
       - 3000:3000
@@ -41,6 +71,7 @@ services:
       - flaq_net
     depends_on:
       - rabbitmq
+      - db
 
 networks:
   flaq_net:

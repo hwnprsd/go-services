@@ -3,24 +3,24 @@ package app
 import (
 	"flaq.club/api/messaging"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/streadway/amqp"
 	"gorm.io/gorm"
 )
 
 type App struct {
-	DB       gorm.DB
+	DB       *gorm.DB
 	MQ       *messaging.Messaging
 	FiberApp *fiber.App
 }
 
-func New(m *messaging.Messaging) *App {
-	fiberApp := fiber.New()
-	fiberApp.Use(logger.New())
-	return &App{
+func New(m *messaging.Messaging, f *fiber.App, d *gorm.DB) *App {
+
+	defaultApp := &App{
 		MQ:       m,
-		FiberApp: fiberApp,
+		FiberApp: f,
+		DB:       d,
 	}
+	return defaultApp
 }
 
 func (a *App) HealthCheck(c *fiber.Ctx) error {
@@ -30,6 +30,11 @@ func (a *App) HealthCheck(c *fiber.Ctx) error {
 
 func (a *App) SetupRoutes() {
 	a.FiberApp.Get("/health", a.HealthCheck)
+
+	a.FiberApp.Get("/test", func(c *fiber.Ctx) error {
+		c.SendString("Test Func 2")
+		return nil
+	})
 
 	a.FiberApp.Get("/mailer", func(c *fiber.Ctx) error {
 		message := amqp.Publishing{
