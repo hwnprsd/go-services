@@ -19,10 +19,15 @@ func New() *fiber.App {
 	return fiberApp
 }
 
+const API_UPDATE_VERSION = 1
+
 func (c *Controller) SetupRoutes() {
 	log.Println("Setting up routes")
-	c.FiberApp.Get("/new-health", func(ctx *fiber.Ctx) error {
-		ctx.SendString("NEW HEALTH CHECK")
+	c.FiberApp.Get("/health", func(ctx *fiber.Ctx) error {
+		ctx.JSON(fiber.Map{
+			"success":     true,
+			"api_version": API_UPDATE_VERSION,
+		})
 		return nil
 	})
 

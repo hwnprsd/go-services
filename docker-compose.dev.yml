@@ -58,9 +58,12 @@ services:
       dockerfile: dev.Dockerfile
     environment:
       AMQP_SERVER_URL: amqp://rabbitmq:5672
-      PG_HOST: db
-      PG_USERNAME: postgres
-      PG_PASSWORD: postgres
+      # PG_HOST: db
+      # PG_USERNAME: postgres
+      # PG_PASSWORD: postgres
+      PG_HOST: db-flaq-1.cy4ze2sssgp0.ap-south-1.rds.amazonaws.com
+      PG_USERNAME: flaqgres
+      PG_PASSWORD: uhh0yRlMkGrjLhVUD2jS
       PG_PORT: 5432
     restart: always
     ports:

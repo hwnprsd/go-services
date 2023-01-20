@@ -19,6 +19,10 @@ services:
       context: ./api
     environment:
       AMQP_SERVER_URL: ${AMQP_SERVER_URL}
+      PG_HOST: ${PG_HOST}
+      PG_USERNAME: ${PG_USERNAME}
+      PG_PASSWORD: ${PG_PASSWORD}
+      PG_PORT: ${PG_PORT}
     restart: always
     logging:
       driver: awslogs
