@@ -15,6 +15,22 @@ type Queue struct {
 	Channel amqp.Channel
 }
 
+func (q *Queue) PublishMessage(payload string) {
+	message := amqp.Publishing{
+		ContentType: "text/plain",
+		Body:        []byte(payload),
+	}
+	if err := q.Channel.Publish(
+		"",       // exchange
+		"Mailer", // queue name
+		false,    // mandatory
+		false,    // immediate
+		message,
+	); err != nil {
+		panic(err)
+	}
+}
+
 // Setup method  
 func (m *Messaging) Setup() error {
 	queue, err := m.CreateQueue("Mailer")

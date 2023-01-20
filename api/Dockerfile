@@ -1,14 +1,12 @@
 FROM golang:1.19-alpine as build
 WORKDIR /src 
 # Copy the two important files
-COPY go.mod /src 
-COPY go.sum /src 
-# Download all the deps
-RUN go mod download 
+COPY go.mod go.sum ./
 COPY . ./
+# Download all the deps
 # Build the executable
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
-RUN go build -o /exe
+RUN go build  -o /exe -mod vendor
 # # Run the executable
 # CMD [ "/exe" ]
 

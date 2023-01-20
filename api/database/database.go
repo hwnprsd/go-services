@@ -22,6 +22,6 @@ func Connect() *gorm.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	dbInstance.AutoMigrate(&models.User{})
+	models.MigrateUsers(dbInstance)
 	return dbInstance
 }
