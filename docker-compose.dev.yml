@@ -12,6 +12,15 @@ services:
     networks:
       - flaq_net
 
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - 6379:6379
+    command: redis-server --save 20 1 --loglevel warning
+    networks:
+      - flaq_net
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: "rabbitmq"
@@ -51,6 +60,7 @@ services:
       - flaq_net
     depends_on:
       - rabbitmq
+      - cache
       - api
 
   api:
@@ -74,6 +84,21 @@ services:
     depends_on:
       - rabbitmq
       - db
+
+  scheduler:
+    container_name: "scheduler"
+    build:
+      context: ./scheduler
+    environment:
+      AMQP_SERVER_URL: amqp://rabbitmq:5672
+      REDIS_URL: "cache:6379"
+    restart: always
+    networks:
+      - flaq_net
+    depends_on:
+      - rabbitmq
+      - cache
+      - api
 
 networks:
   flaq_net:

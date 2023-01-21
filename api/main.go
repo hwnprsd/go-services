@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"os"
 	"time"
@@ -10,14 +9,7 @@ import (
 	"flaq.club/api/controllers"
 	"flaq.club/api/database"
 	"flaq.club/api/messaging"
-	"github.com/hibiken/asynq"
 	"github.com/streadway/amqp"
-)
-
-// A list of task types.
-const (
-	TypeEmailDelivery = "email:deliver"
-	TypeImageResize   = "image:resize"
 )
 
 type EmailDeliveryPayload struct {
@@ -27,22 +19,6 @@ type EmailDeliveryPayload struct {
 
 type ImageGenPayload struct {
 	UserName string
-}
-
-func NewEmailDeliveryTask(userEmail string, tmplID string) (*asynq.Task, error) {
-	payload, err := json.Marshal(EmailDeliveryPayload{UserEmail: userEmail, TemplateID: tmplID})
-	if err != nil {
-		return nil, err
-	}
-	return asynq.NewTask(TypeEmailDelivery, payload), nil
-}
-
-func NewImageGenTask(userName string) (*asynq.Task, error) {
-	payload, err := json.Marshal(ImageGenPayload{UserName: userName})
-	if err != nil {
-		return nil, err
-	}
-	return asynq.NewTask(TypeImageResize, payload), nil
 }
 
 func main() {
@@ -61,11 +37,9 @@ func main() {
 		Connection: rmqConnection,
 	}
 
-	if err = mq.Setup(); err != nil {
-		panic(err)
-	}
+	closeFunc := mq.Setup()
 
-	defer mq.MailerQueue.Channel.Close()
+	defer closeFunc()
 
 	fiberApp := controllers.New()
 

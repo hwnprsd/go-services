@@ -29,12 +29,18 @@ func (ctrl *Controller) CreateUser() func(utils.RequestBody) interface{} {
 			panic(result.Error)
 		}
 
-		jsonString, _ := json.Marshal(fiber.Map{
+		jsonString1, _ := json.Marshal(fiber.Map{
 			"email": body.Email,
 			"type":  "WELCOME",
 		})
 
-		ctrl.MQ.MailerQueue.PublishMessage(string(jsonString))
+		jsonString2, _ := json.Marshal(fiber.Map{
+			"email": body.Email,
+			"to":    "scheduler",
+		})
+
+		ctrl.MQ.MailerQueue.PublishMessage(string(jsonString1))
+		ctrl.MQ.SchedulerQueue.PublishMessage(string(jsonString2))
 
 		return "User Added"
 	}

@@ -19,7 +19,7 @@ func New() *fiber.App {
 	return fiberApp
 }
 
-const API_UPDATE_VERSION = 3
+const API_UPDATE_VERSION = 5
 
 func (c *Controller) SetupRoutes() {
 	log.Println("Setting up routes")

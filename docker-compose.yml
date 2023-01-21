@@ -9,6 +9,11 @@ services:
     environment:
       AMQP_SERVER_URL: ${AMQP_SERVER_URL}
     restart: always
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: flaqloggroup
     networks:
       - flaq_net
 
@@ -31,6 +36,23 @@ services:
         awslogs-group: flaqloggroup
     ports:
       - 3000:3000
+    networks:
+      - flaq_net
+
+  scheduler:
+    container_name: "scheduler"
+    image: 312136753954.dkr.ecr.ap-south-1.amazonaws.com/flaq-scheduler
+    build:
+      context: ./scheduler
+    environment:
+      AMQP_SERVER_URL: ${AMQP_SERVER_URL}
+      REDIS_URL: ${REDIS_URL}
+    restart: always
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-south-1
+        awslogs-group: flaqloggroup
     networks:
       - flaq_net
 

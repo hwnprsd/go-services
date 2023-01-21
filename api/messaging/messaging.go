@@ -7,7 +7,8 @@ import (
 type Messaging struct {
 	Connection *amqp.Connection
 	// Declare all the queues required for the application
-	MailerQueue *Queue
+	MailerQueue    *Queue
+	SchedulerQueue *Queue
 }
 
 type Queue struct {
@@ -21,10 +22,10 @@ func (q *Queue) PublishMessage(payload string) {
 		Body:        []byte(payload),
 	}
 	if err := q.Channel.Publish(
-		"",       // exchange
-		"Mailer", // queue name
-		false,    // mandatory
-		false,    // immediate
+		"",     // exchange
+		q.Name, // queue name
+		false,  // mandatory
+		false,  // immediate
 		message,
 	); err != nil {
 		panic(err)
@@ -32,21 +33,24 @@ func (q *Queue) PublishMessage(payload string) {
 }
 
 // Setup method  
-func (m *Messaging) Setup() error {
-	queue, err := m.CreateQueue("Mailer")
-	if err != nil {
-		return err
+func (m *Messaging) Setup() func() {
+	queue1, closeFunc1 := m.CreateQueue("mailer")
+	queue2, closeFunc2 := m.CreateQueue("scheduler")
+	m.MailerQueue = queue1
+	m.SchedulerQueue = queue2
+
+	return func() {
+		closeFunc1()
+		closeFunc2()
 	}
-	m.MailerQueue = queue
-	return nil
 }
 
 // CreateQueue method  
-func (m *Messaging) CreateQueue(queueName string) (*Queue, error) {
+func (m *Messaging) CreateQueue(queueName string) (*Queue, func()) {
 	// Open a channel
 	channel, err := m.Connection.Channel()
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 	_, err = channel.QueueDeclare(
 		queueName, // queue name
@@ -57,10 +61,12 @@ func (m *Messaging) CreateQueue(queueName string) (*Queue, error) {
 		nil,       // arguments
 	)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 	return &Queue{
-		Name:    queueName,
-		Channel: *channel,
-	}, nil
+			Name:    queueName,
+			Channel: *channel,
+		}, func() {
+			channel.Close()
+		}
 }

@@ -24,7 +24,7 @@ func main() {
 
 	// Subscribing to QueueService1 for getting messages.
 	messages, err := channel.Consume(
-		"Mailer", // queue name
+		"mailer", // queue name
 		"",       // consumer
 		true,     // auto-ack
 		false,    // exclusive
