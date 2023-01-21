@@ -9,6 +9,8 @@ import (
 	"github.com/streadway/amqp"
 )
 
+const SCHEDULER_QUEUE_NAME = "scheduler"
+
 type Queue struct {
 	Name    string
 	Channel amqp.Channel
@@ -49,8 +51,16 @@ func (t *TaskHandler) createConsumer() func() {
 	if err != nil {
 		panic(err)
 	}
+	channel.QueueDeclare(
+		SCHEDULER_QUEUE_NAME,
+		true,  // durable
+		false, // auto delete
+		false, // exclusive
+		false, // no wait
+		nil,   // arguments
+	)
 	messages, err := channel.Consume(
-		"scheduler",
+		SCHEDULER_QUEUE_NAME,
 		"",
 		true,  // auto-ack
 		false, // exclusive

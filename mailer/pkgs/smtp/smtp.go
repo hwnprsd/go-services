@@ -1,0 +1,5 @@
+package smtp
+
+func SendMail() {
+
+}

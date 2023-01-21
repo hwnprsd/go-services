@@ -8,6 +8,8 @@ import (
 	"github.com/streadway/amqp"
 )
 
+const QUEUE_NAME = "mailer"
+
 // main function  
 func main() {
 	amqpServerURL := os.Getenv("AMQP_SERVER_URL")
@@ -22,15 +24,24 @@ func main() {
 	}
 	defer channel.Close()
 
+	channel.QueueDeclare(
+		QUEUE_NAME,
+		true,  // durable
+		false, // auto delete
+		false, // exclusive
+		false, // no wait
+		nil,   // arguments
+	)
+
 	// Subscribing to QueueService1 for getting messages.
 	messages, err := channel.Consume(
-		"mailer", // queue name
-		"",       // consumer
-		true,     // auto-ack
-		false,    // exclusive
-		false,    // no local
-		false,    // no wait
-		nil,      // arguments
+		QUEUE_NAME, // queue name
+		"",         // consumer
+		true,       // auto-ack
+		false,      // exclusive
+		false,      // no local
+		false,      // no wait
+		nil,        // arguments
 	)
 	if err != nil {
 		log.Println(err)
