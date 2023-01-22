@@ -1,11 +1,8 @@
 package controllers
 
 import (
-	"encoding/json"
-
 	"flaq.club/api/models"
 	"flaq.club/api/utils"
-	"github.com/gofiber/fiber/v2"
 )
 
 type CreateUserBody struct {
@@ -29,18 +26,24 @@ func (ctrl *Controller) CreateUser() func(utils.RequestBody) interface{} {
 			panic(result.Error)
 		}
 
-		jsonString1, _ := json.Marshal(fiber.Map{
-			"email": body.Email,
-			"type":  "WELCOME",
+		ctrl.MQ.MailerQueue.PublishMessage(utils.Map{
+			"type": "WELCOME",
+			"data": utils.Map{
+				"email": body.Email,
+			},
 		})
-
-		jsonString2, _ := json.Marshal(fiber.Map{
-			"email": body.Email,
-			"to":    "scheduler",
+		ctrl.MQ.SchedulerQueue.PublishMessage(utils.Map{
+			"type": "WELCOME_2_SCHEDULE",
+			"data": utils.Map{
+				"email": body.Email,
+			},
 		})
-
-		ctrl.MQ.MailerQueue.PublishMessage(string(jsonString1))
-		ctrl.MQ.SchedulerQueue.PublishMessage(string(jsonString2))
+		ctrl.MQ.NftQueue.PublishMessage(utils.Map{
+			"type": "NFT_SCHEDULE",
+			"data": utils.Map{
+				"email": body.Email,
+			},
+		})
 
 		return "User Added"
 	}

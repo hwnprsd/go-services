@@ -13,7 +13,7 @@ contract FlaqPOAP is ERC721, ERC721URIStorage, Ownable {
     Counters.Counter private _tokenIdCounter;
 
     // Constructor will be called on contract creation
-    constructor() ERC721("FlaqPOAP", "FLAQP") {}
+    constructor() ERC721("Flaq - Proof of Attendance", "FLAQP") {}
 
     // Allows minting of a new NFT 
     function mintCollectionNFT(address collector, string memory uri) public onlyOwner() {

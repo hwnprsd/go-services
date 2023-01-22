@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 
 	"flaq.club/api/app"
 	"flaq.club/api/controllers"
@@ -54,30 +53,5 @@ func main() {
 	controller.SetupRoutes()
 
 	log.Fatal(fiberApp.Listen(":3000"))
-
-	// client := asynq.NewClient(asynq.RedisClientOpt{Addr: "127.0.0.1:6379"})
-	// task, err := NewEmailDeliveryTask("ashwin@onpar.in", "some:template:id")
-	// if err != nil {
-	// 	log.Fatalf("could not create task: %v", err)
-	// }
-	// info, err := client.Enqueue(task)
-	// if err != nil {
-	// 	log.Fatalf("could not enqueue task: %v", err)
-	// }
-	// log.Printf("enqueued task: id=%s queue=%s", info.ID, info.Queue)
-	//
-	// task2, err2 := NewImageGenTask("ashwin@onpar.in")
-	// if err2 != nil {
-	// 	log.Fatalf("could not create task: %v", err)
-	// }
-	// info2, err := client.Enqueue(task2)
-	// if err != nil {
-	// 	log.Fatalf("could not enqueue task: %v", err)
-	// }
-	// log.Printf("enqueued task: id=%s queue=%s", info2.ID, info2.Queue)
-	//
-	for range time.Tick(time.Second * 10) {
-
-	}
 
 }

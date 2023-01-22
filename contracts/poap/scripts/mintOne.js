@@ -5,14 +5,17 @@ const { CONTRACT_ADDRESS } = require("./config");
 async function main() {
   console.log("Getting the non fun token contract...\n");
   const contractAddress = CONTRACT_ADDRESS;
-  const nonFunToken = await ethers.getContractAt("FlaqPOAP", contractAddress);
+  const flaqPoap = await ethers.getContractAt("FlaqPOAP", contractAddress);
   const signers = await ethers.getSigners();
   const contractOwner = signers[0].address;
-  const newOwner = "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720";
+  const newOwner = "0x0Dac92D471EC31e8F4004ae87191344D974F108d";
 
-  // let tx = await nonFunToken.mintCollectionNFT(newOwner, "https://google.com");
-  console.log(await nonFunToken.tokenURI("0"));
-  // await tx.wait(); // wait for this tx to finish to avoid nonce issues
+  let tx = await flaqPoap.mintCollectionNFT(
+    "0xC6BaBae03FcfEe9fB709EAC8500eCbAfbDDC461d",
+    "https://flaq-assets.s3.ap-south-1.amazonaws.com/poap1/jsons/Ankit.json"
+  );
+  await tx.wait(); // wait for this tx to finish to avoid nonce issues
+  console.log(tx);
 }
 
 main()

@@ -6,6 +6,7 @@
 // global scope, and execute the script.
 
 const { ethers } = require("hardhat");
+require("dotenv").config();
 
 async function main() {
   // Get the contract owner
@@ -19,7 +20,7 @@ async function main() {
   console.log("Deploying NonFunToken...");
   const nonFunToken = await NonFunToken.deploy();
   await nonFunToken.deployed();
-  console.log(`NonFunToken deployed to: ${nonFunToken.address}`);
+  console.log(`FlaqPOAP deployed to: ${nonFunToken.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

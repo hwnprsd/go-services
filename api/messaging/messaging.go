@@ -1,6 +1,8 @@
 package messaging
 
 import (
+	"encoding/json"
+	"flaq.club/api/utils"
 	"github.com/streadway/amqp"
 )
 
@@ -9,6 +11,7 @@ type Messaging struct {
 	// Declare all the queues required for the application
 	MailerQueue    *Queue
 	SchedulerQueue *Queue
+	NftQueue       *Queue
 }
 
 type Queue struct {
@@ -16,10 +19,13 @@ type Queue struct {
 	Channel amqp.Channel
 }
 
-func (q *Queue) PublishMessage(payload string) {
+func (q *Queue) PublishMessage(payloadMap utils.Map) {
+
+	jsonString, _ := json.Marshal(payloadMap)
+
 	message := amqp.Publishing{
 		ContentType: "text/plain",
-		Body:        []byte(payload),
+		Body:        []byte(string(jsonString)),
 	}
 	if err := q.Channel.Publish(
 		"",     // exchange
@@ -36,12 +42,15 @@ func (q *Queue) PublishMessage(payload string) {
 func (m *Messaging) Setup() func() {
 	queue1, closeFunc1 := m.CreateQueue("mailer")
 	queue2, closeFunc2 := m.CreateQueue("scheduler")
+	queue3, closeFunc3 := m.CreateQueue("nft")
 	m.MailerQueue = queue1
 	m.SchedulerQueue = queue2
+	m.NftQueue = queue3
 
 	return func() {
 		closeFunc1()
 		closeFunc2()
+		closeFunc3()
 	}
 }
 

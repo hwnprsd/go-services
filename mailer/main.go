@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/streadway/amqp"
 )
 
-const QUEUE_NAME = "mailer"
+const QUEUE_NAME_MAILER = "mailer"
+const QUEUE_NAME_NFT = "nft"
 
 // main function  
 func main() {
@@ -18,14 +18,25 @@ func main() {
 		panic(err)
 	}
 	defer connectRabbitMq.Close()
-	channel, err := connectRabbitMq.Channel()
-	if err != nil {
-		panic(err)
+	log.Println("Mailer Listener Started")
+	queues := []string{QUEUE_NAME_MAILER, QUEUE_NAME_NFT}
+	forever := make(chan bool)
+	for _, queue := range queues {
+		channel, err := connectRabbitMq.Channel()
+		if err != nil {
+			panic(err)
+		}
+		defer channel.Close()
+		defer log.Printf("QUEUE CLOSED! QUEUE CLOSED! QUEUE CLOSED! QUEUE CLOSED!")
+		go ProcessQueue(*channel, queue)
 	}
-	defer channel.Close()
+	<-forever
+}
+
+func ProcessQueue(channel amqp.Channel, queueName string) {
 
 	channel.QueueDeclare(
-		QUEUE_NAME,
+		queueName,
 		true,  // durable
 		false, // auto delete
 		false, // exclusive
@@ -35,28 +46,24 @@ func main() {
 
 	// Subscribing to QueueService1 for getting messages.
 	messages, err := channel.Consume(
-		QUEUE_NAME, // queue name
-		"",         // consumer
-		true,       // auto-ack
-		false,      // exclusive
-		false,      // no local
-		false,      // no wait
-		nil,        // arguments
+		queueName, // queue name
+		"",        // consumer
+		true,      // auto-ack
+		false,     // exclusive
+		false,     // no local
+		false,     // no wait
+		nil,       // arguments
 	)
 	if err != nil {
-		log.Println(err)
+		panic(err)
 	}
 
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Println("Mailer Listener Started")
-	forever := make(chan bool)
 	go func() {
 		for message := range messages {
 			log.Printf(">> Received message: %s\n", message.Body)
 		}
 	}()
-	<-forever
 }
