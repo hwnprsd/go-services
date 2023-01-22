@@ -7,13 +7,13 @@ tmp/
 .vscode
 
 # hardhat
-artifacts
-cache
-deployments
-node_modules
-coverage
+artifacts/
+cache/
+deployments/
+node_modules/
+coverage/
 coverage.json
-typechain
+typechain/
 
 # don't push the environment vars!
 .env
