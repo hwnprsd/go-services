@@ -16,6 +16,6 @@ deploy:
 
 run:
 	$(MAKE) -C ./api modsync
-	docker-compose -f docker-compose.dev.yml up --build --remove-orphans --force-recreate 
+	docker-compose -f docker-compose.dev.yml --env-file .dev.env up --build --remove-orphans --force-recreate
 	
 

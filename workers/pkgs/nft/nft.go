@@ -5,29 +5,39 @@ import (
 	"crypto/ecdsa"
 	"log"
 	"math/big"
+	"os"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/streadway/amqp"
 
-	"flaq.club/mailer/pkgs/nft/FlaqPoap"
+	"flaq.club/workers/pkgs/nft/FlaqPoap"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
+func HandleMessages(payload *amqp.Delivery) {
+	payload.Ack(false)
+}
+
 func Mint(address common.Address, uri string) {
-	client, err := ethclient.Dial("https://boldest-fluent-film.matic.discover.quiknode.pro/d1e275400cd5192726c795167a702d8c78a5fd09/")
+	rpcUrl := os.Getenv("RPC_URL")
+	contractAddressString := os.Getenv("CONTRACT_ADDRESS")
+	privateKeyHex := os.Getenv("PRIVATE_KEY")
+
+	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
 		panic(err)
 	}
 
-	privateKey, err := crypto.HexToECDSA("0ac42db921a2f66c8c0ba69d049b63677b3f60b8a7bc7503eff95eceb84ec7bf")
+	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	publicKey := privateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
 		log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
 	}
 
-	contractAddress := common.HexToAddress("0xE0467AbCAd80cc5310911bF380Dd42904ad9FD37")
+	contractAddress := common.HexToAddress(contractAddressString)
 	instance, err := FlaqPoap.NewFlaqPoap(contractAddress, client)
 	if err != nil {
 		panic(err)

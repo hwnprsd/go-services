@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"flaq.club/workers/pkgs/nft"
 	"github.com/streadway/amqp"
 )
 
@@ -48,7 +49,7 @@ func ProcessQueue(channel amqp.Channel, queueName string) {
 	messages, err := channel.Consume(
 		queueName, // queue name
 		"",        // consumer
-		true,      // auto-ack
+		false,     // auto-ack
 		false,     // exclusive
 		false,     // no local
 		false,     // no wait
@@ -63,7 +64,13 @@ func ProcessQueue(channel amqp.Channel, queueName string) {
 	}
 	go func() {
 		for message := range messages {
-			log.Printf(">> Received message: %s\n", message.Body)
+			if queueName == QUEUE_NAME_NFT {
+				nft.HandleMessages(&message)
+			}
+			if queueName == QUEUE_NAME_MAILER {
+
+			}
+
 		}
 	}()
 }

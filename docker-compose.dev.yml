@@ -49,12 +49,15 @@ services:
     networks:
       - flaq_net
 
-  mailer:
-    container_name: "flaq-mailer"
+  workers:
+    container_name: "flaq-workers"
     build:
-      context: ./mailer
+      context: ./workers
     environment:
       AMQP_SERVER_URL: amqp://rabbitmq:5672
+      RPC_URL: ${RPC_URL}
+      CONTRACT_ADDRESS: ${CONTRACT_ADDRESS}
+      PRIVATE_KEY: ${PRIVATE_KEY}
     restart: always
     networks:
       - flaq_net
