@@ -21,6 +21,12 @@ github.com/gofiber/fiber/v2/internal/schema
 github.com/gofiber/fiber/v2/internal/uuid
 github.com/gofiber/fiber/v2/middleware/logger
 github.com/gofiber/fiber/v2/utils
+# github.com/google/uuid v1.3.0
+## explicit
+github.com/google/uuid
+# github.com/hwnprsd/shared_types v0.0.0-20230123193957-2e7671365de3
+## explicit; go 1.19
+github.com/hwnprsd/shared_types
 # github.com/jackc/pgpassfile v1.0.0
 ## explicit; go 1.12
 github.com/jackc/pgpassfile

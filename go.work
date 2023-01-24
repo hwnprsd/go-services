@@ -4,5 +4,4 @@ use (
 	./api
 	./workers
 	./scheduler
-	./shared_types
 )

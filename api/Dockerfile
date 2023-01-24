@@ -6,7 +6,7 @@ COPY . ./
 # Download all the deps
 # Build the executable
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
-RUN go build  -o /exe -mod vendor
+RUN go build  -o /exe 
 # # Run the executable
 # CMD [ "/exe" ]
 

@@ -3,27 +3,53 @@ package nft
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/json"
 	"log"
 	"math/big"
 	"os"
 
+	"flaq.club/workers/pkgs/nft/FlaqPoap"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/hwnprsd/shared_types"
 	"github.com/streadway/amqp"
 
-	"flaq.club/workers/pkgs/nft/FlaqPoap"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 func HandleMessages(payload *amqp.Delivery) {
+	message := shared_types.MintPoapMessage{}
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("panic occurred:", err)
+			payload.Reject(false)
+		}
+	}()
+	err := json.Unmarshal(payload.Body, &message)
+	if err != nil {
+		log.Printf("Error parsing JSON message. Please check what the sender sent! QUEUE - %s", payload.Body)
+		payload.Reject(false)
+		return
+	}
+	MintPoap(message.Address, message.TokenURI)
 	payload.Ack(false)
 }
 
-func Mint(address common.Address, uri string) {
-	rpcUrl := os.Getenv("RPC_URL")
-	contractAddressString := os.Getenv("CONTRACT_ADDRESS")
-	privateKeyHex := os.Getenv("PRIVATE_KEY")
+func failIfFalse(exists bool) {
+	if !exists {
+		panic("Invalid ENV")
+	}
+}
+
+func MintPoap(addressString string, uri string) {
+	rpcUrl, exists := os.LookupEnv("RPC_URL")
+	failIfFalse(exists)
+	contractAddressString, exists := os.LookupEnv("CONTRACT_ADDRESS")
+	failIfFalse(exists)
+	privateKeyHex, exists := os.LookupEnv("PRIVATE_KEY")
+	failIfFalse(exists)
+	address := common.BytesToAddress([]byte(addressString))
 
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
@@ -31,6 +57,10 @@ func Mint(address common.Address, uri string) {
 	}
 
 	privateKey, err := crypto.HexToECDSA(privateKeyHex)
+	if err != nil {
+		log.Println("Error converting Hex to ECDSA")
+		panic(err)
+	}
 	publicKey := privateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
@@ -67,5 +97,4 @@ func Mint(address common.Address, uri string) {
 	}
 
 	log.Printf("tx sent: %s", tx.Hash().Hex())
-
 }

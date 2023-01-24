@@ -68,7 +68,7 @@ func ProcessQueue(channel amqp.Channel, queueName string) {
 				nft.HandleMessages(&message)
 			}
 			if queueName == QUEUE_NAME_MAILER {
-
+				log.Printf("NEW MAILER MESSAGE %s", message.Body)
 			}
 
 		}

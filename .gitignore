@@ -16,7 +16,7 @@ coverage/
 coverage.json
 typechain/
 nfts/
-./contracts/poap/scripts/
+scripts/
 
 # don't push the environment vars!
 .env

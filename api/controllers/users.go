@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"net/http"
+
 	"flaq.club/api/models"
 	"flaq.club/api/utils"
 )
@@ -11,8 +13,8 @@ type CreateUserBody struct {
 }
 
 // Add users with unique emails to the table
-func (ctrl *Controller) CreateUser() func(utils.RequestBody) interface{} {
-	return func(data utils.RequestBody) interface{} {
+func (ctrl *Controller) CreateUser() utils.PostHandler {
+	return func(data utils.RequestBody) (interface{}, error) {
 		body := data.Data.(*CreateUserBody)
 		if body.Level < 1 {
 			body.Level = 1
@@ -23,7 +25,11 @@ func (ctrl *Controller) CreateUser() func(utils.RequestBody) interface{} {
 		}
 		result := ctrl.DB.Create(&user)
 		if result.Error != nil {
-			panic(result.Error)
+			return nil, &utils.RequestError{
+				StatusCode: http.StatusInternalServerError,
+				Message:    "Error Creating User in the Database",
+				Err:        result.Error,
+			}
 		}
 
 		ctrl.MQ.MailerQueue.PublishMessage(utils.Map{
@@ -45,17 +51,21 @@ func (ctrl *Controller) CreateUser() func(utils.RequestBody) interface{} {
 			},
 		})
 
-		return "User Added"
+		return "User Added", nil
 	}
 }
 
-func (ctrl *Controller) GetUsers() func(utils.RequestBody) interface{} {
-	return func(data utils.RequestBody) interface{} {
+func (ctrl *Controller) GetUsers() utils.GetHandler {
+	return func(data utils.RequestBody) (interface{}, error) {
 		users := []models.User{}
 		result := ctrl.DB.Find(&users)
 		if result.Error != nil {
-			panic(result.Error)
+			return nil, &utils.RequestError{
+				StatusCode: http.StatusInternalServerError,
+				Message:    "Error fetching data",
+				Err:        result.Error,
+			}
 		}
-		return users
+		return users, nil
 	}
 }

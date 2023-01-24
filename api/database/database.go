@@ -22,6 +22,9 @@ func Connect() *gorm.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	models.MigrateUsers(dbInstance)
+	err = dbInstance.AutoMigrate(&models.User{}, &models.QuizSubmission{})
+	if err != nil {
+		log.Fatal(err)
+	}
 	return dbInstance
 }

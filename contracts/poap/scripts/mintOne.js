@@ -3,19 +3,21 @@ const { ethers } = require("hardhat");
 const { CONTRACT_ADDRESS } = require("./config");
 
 async function main() {
-  console.log("Getting the non fun token contract...\n");
+  console.log("Getting the FlaqPOAP contract...\n");
   const contractAddress = CONTRACT_ADDRESS;
   const flaqPoap = await ethers.getContractAt("FlaqPOAP", contractAddress);
   const signers = await ethers.getSigners();
-  const contractOwner = signers[0].address;
-  const newOwner = "0x0Dac92D471EC31e8F4004ae87191344D974F108d";
 
+  const users = [];
+
+  console.log("Running");
   let tx = await flaqPoap.mintCollectionNFT(
-    "0xC6BaBae03FcfEe9fB709EAC8500eCbAfbDDC461d",
-    "https://flaq-assets.s3.ap-south-1.amazonaws.com/poap1/jsons/Ankit.json"
+    "0xedAAE8847970b79f07AD01332ce1142089eB2E7F",
+    "https://flaq-assets.s3.ap-south-1.amazonaws.com/poap1/jsons/shreya.json"
   );
+  console.log(tx.hash);
   await tx.wait(); // wait for this tx to finish to avoid nonce issues
-  console.log(tx);
+  console.log("---");
 }
 
 main()

@@ -14,7 +14,7 @@ const createObject = (name) => ({
 });
 
 async function main() {
-  const names = ["Ashwin", "Muaaz", "Ankit", "Sarthak"];
+  const names = [];
   for (const name of names) {
     const json = createObject(name);
     fs.writeFileSync(`nfts/${name}.json`, JSON.stringify(json, null, 5));

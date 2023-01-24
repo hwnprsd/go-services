@@ -55,12 +55,14 @@ services:
       context: ./workers
     environment:
       AMQP_SERVER_URL: amqp://rabbitmq:5672
-      RPC_URL: ${RPC_URL}
+      RPC_URL: "http://host.docker.internal:8545/"
       CONTRACT_ADDRESS: ${CONTRACT_ADDRESS}
       PRIVATE_KEY: ${PRIVATE_KEY}
     restart: always
     networks:
       - flaq_net
+    env_file:
+      - .dev.env
     depends_on:
       - rabbitmq
       - cache

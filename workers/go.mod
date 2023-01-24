@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/ethereum/go-ethereum v1.10.26
+	github.com/hwnprsd/shared_types v0.0.0-20230123193957-2e7671365de3
 	github.com/streadway/amqp v1.0.0
 )
 

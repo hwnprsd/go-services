@@ -2,7 +2,6 @@ package messaging
 
 import (
 	"encoding/json"
-	"flaq.club/api/utils"
 	"github.com/streadway/amqp"
 )
 
@@ -19,7 +18,7 @@ type Queue struct {
 	Channel amqp.Channel
 }
 
-func (q *Queue) PublishMessage(payloadMap utils.Map) {
+func (q *Queue) PublishMessage(payloadMap interface{}) {
 
 	jsonString, _ := json.Marshal(payloadMap)
 

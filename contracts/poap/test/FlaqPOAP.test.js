@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 // Start test block
 describe("FlaqPOAP", function () {
   before(async function () {
-    this.NonFunToken = await ethers.getContractFactory("NonFunToken");
+    this.NonFunToken = await ethers.getContractFactory("FlaqPOAP");
   });
 
   beforeEach(async function () {
