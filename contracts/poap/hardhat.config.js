@@ -19,7 +19,7 @@ module.exports = {
   solidity: "0.8.9",
   networks: {
     matic: {
-      url: "https://fittest-weathered-shadow.matic.discover.quiknode.pro/31458d6dd1cbc4b1b4de1ed7fcb8da3245027d01/",
+      url: RPC_URL,
       accounts: [PRIVATE_KEY],
     },
     hardhat: {

@@ -19,20 +19,31 @@ import (
 )
 
 func HandleMessages(payload *amqp.Delivery) {
-	message := shared_types.MintPoapMessage{}
+	baseMessage := shared_types.MessagingBase{}
 	defer func() {
 		if err := recover(); err != nil {
 			log.Println("panic occurred:", err)
 			payload.Reject(false)
 		}
 	}()
-	err := json.Unmarshal(payload.Body, &message)
+	err := json.Unmarshal(payload.Body, &baseMessage)
 	if err != nil {
 		log.Printf("Error parsing JSON message. Please check what the sender sent! QUEUE - %s", payload.Body)
 		payload.Reject(false)
 		return
 	}
-	MintPoap(message.Address, message.TokenURI)
+	switch baseMessage.WorkType {
+	case shared_types.WORK_TYPE_MINT_POAP:
+		message := shared_types.MintPoapMessage{}
+		json.Unmarshal(payload.Body, &message)
+		MintPoap(message.Address, message.TokenURI)
+		break
+	case shared_types.WORK_TYPE_MINT_QUIZ_NFT:
+		message := shared_types.MintQuizNFTMessage{}
+		json.Unmarshal(payload.Body, &message)
+		log.Printf("Requested to mint the NFT for addr %s", message.Address)
+		break
+	}
 	payload.Ack(false)
 }
 
@@ -43,7 +54,11 @@ func failIfFalse(exists bool) {
 }
 
 func MintPoap(addressString string, uri string) {
-	rpcUrl, exists := os.LookupEnv("RPC_URL")
+	log.Printf("Requesting to Mint POAP for address %s", addressString)
+	log.Printf("POAP Minting is not enabled at this time")
+	return
+
+	rpcUrl, exists := os.LookupEnv("ETH_RPC_URL")
 	failIfFalse(exists)
 	contractAddressString, exists := os.LookupEnv("CONTRACT_ADDRESS")
 	failIfFalse(exists)
@@ -85,7 +100,7 @@ func MintPoap(addressString string, uri string) {
 		log.Fatal(err)
 	}
 
-	auth := bind.NewKeyedTransactor(privateKey)
+	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(137))
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)     // in wei
 	auth.GasLimit = uint64(300000) // in units
@@ -93,8 +108,9 @@ func MintPoap(addressString string, uri string) {
 
 	tx, err := instance.MintCollectionNFT(auth, address, uri)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("ERROR MINTING POAP", err)
+	} else {
+		log.Printf("tx sent: %s", tx.Hash().Hex())
 	}
 
-	log.Printf("tx sent: %s", tx.Hash().Hex())
 }

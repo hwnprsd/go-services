@@ -4,8 +4,11 @@ import (
 	"log"
 	"os"
 
+	"flaq.club/workers/database"
+	"flaq.club/workers/pkgs/mailer"
 	"flaq.club/workers/pkgs/nft"
 	"github.com/streadway/amqp"
+	"gorm.io/gorm"
 )
 
 const QUEUE_NAME_MAILER = "mailer"
@@ -22,6 +25,7 @@ func main() {
 	log.Println("Mailer Listener Started")
 	queues := []string{QUEUE_NAME_MAILER, QUEUE_NAME_NFT}
 	forever := make(chan bool)
+	db := database.Connect()
 	for _, queue := range queues {
 		channel, err := connectRabbitMq.Channel()
 		if err != nil {
@@ -29,12 +33,12 @@ func main() {
 		}
 		defer channel.Close()
 		defer log.Printf("QUEUE CLOSED! QUEUE CLOSED! QUEUE CLOSED! QUEUE CLOSED!")
-		go ProcessQueue(*channel, queue)
+		go ProcessQueue(*channel, queue, db)
 	}
 	<-forever
 }
 
-func ProcessQueue(channel amqp.Channel, queueName string) {
+func ProcessQueue(channel amqp.Channel, queueName string, db *gorm.DB) {
 
 	channel.QueueDeclare(
 		queueName,
@@ -65,10 +69,12 @@ func ProcessQueue(channel amqp.Channel, queueName string) {
 	go func() {
 		for message := range messages {
 			if queueName == QUEUE_NAME_NFT {
+				log.Println("Handling NFT Message")
 				nft.HandleMessages(&message)
 			}
 			if queueName == QUEUE_NAME_MAILER {
-				log.Printf("NEW MAILER MESSAGE %s", message.Body)
+				log.Println("Handling Mailer Message")
+				mailer.HandleMessages(&message, db)
 			}
 
 		}

@@ -55,9 +55,17 @@ services:
       context: ./workers
     environment:
       AMQP_SERVER_URL: amqp://rabbitmq:5672
-      RPC_URL: "http://host.docker.internal:8545/"
+      ETH_RPC_URL: "http://host.docker.internal:8545/"
       CONTRACT_ADDRESS: ${CONTRACT_ADDRESS}
       PRIVATE_KEY: ${PRIVATE_KEY}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_HOST: ${SMTP_HOST}
+      PG_HOST: db
+      PG_USERNAME: postgres
+      PG_PASSWORD: postgres
+      PG_PORT: 5432
     restart: always
     networks:
       - flaq_net
@@ -79,6 +87,7 @@ services:
       PG_USERNAME: postgres
       PG_PASSWORD: postgres
       PG_PORT: 5432
+      POAP_MINT_SECRET: testmint
     restart: always
     ports:
       - 3000:3000

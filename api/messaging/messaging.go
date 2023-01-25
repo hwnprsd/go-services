@@ -18,7 +18,7 @@ type Queue struct {
 	Channel amqp.Channel
 }
 
-func (q *Queue) PublishMessage(payloadMap interface{}) {
+func (q *Queue) PublishMessage(payloadMap interface{}) error {
 
 	jsonString, _ := json.Marshal(payloadMap)
 
@@ -33,8 +33,9 @@ func (q *Queue) PublishMessage(payloadMap interface{}) {
 		false,  // immediate
 		message,
 	); err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
 
 // Setup method  

@@ -1,5 +1,0 @@
-package smtp
-
-func SendMail() {
-
-}

@@ -5,6 +5,7 @@ import (
 
 	"flaq.club/api/models"
 	"flaq.club/api/utils"
+	"github.com/hwnprsd/shared_types"
 )
 
 type CreateUserBody struct {
@@ -32,12 +33,17 @@ func (ctrl *Controller) CreateUser() utils.PostHandler {
 			}
 		}
 
-		ctrl.MQ.MailerQueue.PublishMessage(utils.Map{
-			"type": "WELCOME",
-			"data": utils.Map{
-				"email": body.Email,
+		ctrl.MQ.MailerQueue.PublishMessage(shared_types.NewSendMailMessage(
+			"ashwin@solace.money",
+			"Claim sthe NFT you jusat earned! Again 2 - ! 3x",
+			1,
+			[]any{"https://flaq-assets.s3.ap-south-1.amazonaws.com/backgrounds/TTWE.png",
+				"The term 'Web3' explained!",
+				"While the features of the new web are endless, the main features, as we see it, are that web3 is permissionless, decentralized, trustless and money will become a native feature of the internet! All of this together will not just lead to ownership, but also anti-censoring. With web3 being the future, why not learn all about it - step by step? Find a more elaborate version of this summary, and learn more about what the term ‘web3’ means here ",
+				"https://bit.ly/flaq-term-web3-explained",
+				"Learn More",
 			},
-		})
+		))
 		ctrl.MQ.SchedulerQueue.PublishMessage(utils.Map{
 			"type": "WELCOME_2_SCHEDULE",
 			"data": utils.Map{

@@ -51,7 +51,7 @@ func (c *Controller) SetupRoutes() {
 	})
 
 	c.FiberApp.Post("/quiz/request-email", func(ctx *fiber.Ctx) error {
-		body := new(RequestNFTClaimEmailBody)
+		body := new(NFTClaimEmailBody)
 		return utils.PostRequestHandler(ctx, c.RequestNFTClaimEmail(), utils.RequestBody{Data: body})
 	})
 
@@ -61,5 +61,10 @@ func (c *Controller) SetupRoutes() {
 		query := new(GetSubmissionInfoQuery)
 		query.QuizClaimID = quizClaimId
 		return utils.GetRequestHandler(ctx, c.GetSubmissionInfo(), utils.RequestBody{Data: query})
+	})
+
+	c.FiberApp.Post("/quiz/mint", func(ctx *fiber.Ctx) error {
+		body := new(NFTClaimAttempt)
+		return utils.PostRequestHandler(ctx, c.MintQuizNFT(), utils.RequestBody{Data: body})
 	})
 }

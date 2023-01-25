@@ -1,13 +1,16 @@
 version: "3.8"
 
 services:
-  mailer:
-    container_name: "flaq-mailer"
-    image: 312136753954.dkr.ecr.ap-south-1.amazonaws.com/flaq-mailer
+  workers:
+    container_name: "flaq-workers"
+    image: 312136753954.dkr.ecr.ap-south-1.amazonaws.com/flaq-workers
     build:
-      context: ./mailer
+      context: ./workers
     environment:
       AMQP_SERVER_URL: ${AMQP_SERVER_URL}
+      ETH_RPC_URL: ${ETH_RPC_URL}
+      CONTRACT_ADDRESS: ${CONTRACT_ADDRESS}
+      PRIVATE_KEY: ${PRIVATE_KEY}
     restart: always
     logging:
       driver: awslogs
@@ -28,6 +31,7 @@ services:
       PG_USERNAME: ${PG_USERNAME}
       PG_PASSWORD: ${PG_PASSWORD}
       PG_PORT: ${PG_PORT}
+      POAP_MINT_SECRET: ${POAP_MINT_SECRET}
     restart: always
     logging:
       driver: awslogs

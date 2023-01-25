@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"net/http"
+	"os"
 
 	"flaq.club/api/models"
 	"flaq.club/api/utils"
@@ -13,13 +14,24 @@ import (
 type MintNftBody struct {
 	Email         string `json:"email,omitempty" validate:"required,email,min=6,max=32"`
 	Name          string `json:"name,omitempty" validate:"required,min=3,max=12"`
-	WalletAddress string `json:"walletAddress,omitempty" validate:"required,min=42,max=42"`
+	WalletAddress string `validate:"required,min=42,max=42" json:"wallet_address,omitempty"`
+	TokenURI      string `json:"token_uri,omitempty" validate:"required"`
+	MintSecret    string `json:"mint_secret,omitempty" validate:"required"`
 }
 
 func (ctrl *Controller) MintPOAP() utils.PostHandler {
+	secret := os.Getenv("POAP_MINT_SECRET")
+
 	return func(data utils.RequestBody) (interface{}, error) {
 		body := data.Data.(*MintNftBody)
-		payload := shared_types.NewMintPoapMessage(body.Email, body.WalletAddress, body.Name, "https://google.com")
+		if body.MintSecret != secret {
+			return nil, &utils.RequestError{
+				StatusCode: http.StatusUnauthorized,
+				Message:    "Invalid Secret",
+				Err:        errors.New("Invalid secret provided for minting"),
+			}
+		}
+		payload := shared_types.NewMintPoapMessage(body.Email, body.WalletAddress, body.Name, body.TokenURI)
 		ctrl.MQ.NftQueue.PublishMessage(*payload)
 		return "NFT Minting Started. Check back on your email", nil
 	}
@@ -55,13 +67,13 @@ func (ctrl *Controller) SubmitQuizParticipation() utils.PostHandler {
 	}
 }
 
-type RequestNFTClaimEmailBody struct {
+type NFTClaimEmailBody struct {
 	QuizClaimID string `json:"quiz_claim_id,omitempty" validate:"required"`
 }
 
 func (ctrl *Controller) RequestNFTClaimEmail() utils.PostHandler {
 	return func(data utils.RequestBody) (interface{}, error) {
-		body := data.Data.(*RequestNFTClaimEmailBody)
+		body := data.Data.(*NFTClaimEmailBody)
 		result := ctrl.DB.Model(&models.QuizSubmission{}).Where("claim_id = ? AND is_nft_claim_mail_sent = ?", body.QuizClaimID, false).Update("is_nft_claim_mail_sent", true)
 		if result.Error != nil {
 			return nil, &utils.RequestError{
@@ -79,6 +91,7 @@ func (ctrl *Controller) RequestNFTClaimEmail() utils.PostHandler {
 			}
 		}
 
+		// Handle errors
 		ctrl.MQ.MailerQueue.PublishMessage(utils.Map{
 			"type":    "Send Mail",
 			"content": "Yay",
@@ -97,8 +110,8 @@ func (ctrl *Controller) GetSubmissionInfo() utils.GetHandler {
 		submission := models.QuizSubmission{}
 		result := ctrl.DB.Model(&submission).Where("claim_id = ?", query.QuizClaimID).First(&submission)
 
+		// Consider using transactions to make this faster
 		if result.Error != nil {
-
 			return nil, &utils.RequestError{
 				StatusCode: http.StatusInternalServerError,
 				Message:    "Error fetching data",
@@ -106,6 +119,49 @@ func (ctrl *Controller) GetSubmissionInfo() utils.GetHandler {
 			}
 		}
 
+		result = ctrl.DB.Model(&models.QuizSubmission{}).Where("claim_id = ?", query.QuizClaimID).Update("NFTClaimAttemptCount", submission.NFTClaimAttemptCount+1)
+		if result.Error != nil {
+			return nil, &utils.RequestError{
+				StatusCode: http.StatusBadRequest,
+				Err:        result.Error,
+				Message:    "Error updating the entry",
+			}
+		}
+
 		return submission, nil
+	}
+}
+
+type NFTClaimAttempt struct {
+	QuizClaimID   string `json:"quiz_claim_id,omitempty" validate:"required"`
+	WalletAddress string `json:"wallet_address,omitempty" validate:"required"`
+}
+
+func (ctrl *Controller) MintQuizNFT() utils.PostHandler {
+	return func(data utils.RequestBody) (interface{}, error) {
+		body := data.Data.(*NFTClaimAttempt)
+		submission := models.QuizSubmission{}
+		result := ctrl.DB.Model(&submission).Where("claim_id = ?", body.QuizClaimID).First(&submission)
+		if result.Error != nil {
+			return nil, &utils.RequestError{
+				StatusCode: http.StatusInternalServerError,
+				Message:    "Error fetching data",
+				Err:        result.Error,
+			}
+		}
+
+		// TODO: Create or get NFT Token URI
+
+		message := shared_types.NewMintQuizNFTMessage(*submission.Email, body.WalletAddress, "https://google.com")
+		if err := ctrl.MQ.NftQueue.PublishMessage(message); err != nil {
+			return nil, &utils.RequestError{
+				StatusCode: http.StatusInternalServerError,
+				Message:    "Error sending message across services",
+				Err:        err,
+			}
+		}
+
+		return "NFT Minting Started - Email will be sent upon completion", nil
+
 	}
 }
