@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/ethereum/go-ethereum v1.10.26
-	github.com/hwnprsd/shared_types v0.0.0-20230125152420-fb5e58a3a995
+	github.com/hwnprsd/shared_types v0.0.0-20230126144144-495ef5d91c59
 	github.com/lib/pq v1.10.7
 	github.com/streadway/amqp v1.0.0
 	gorm.io/driver/postgres v1.4.6

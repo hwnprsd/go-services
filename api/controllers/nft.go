@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"os"
 
@@ -47,7 +48,7 @@ func (ctrl *Controller) SubmitQuizParticipation() utils.PostHandler {
 		body := data.Data.(*SubmitQuizParticipationBody)
 		tokenId := uuid.New().String()
 		quizSubmission := models.QuizSubmission{
-			Email:                &body.Email,
+			Email:                body.Email,
 			QuizID:               body.QuizId,
 			ClaimID:              tokenId,
 			IsNFTClaimed:         false,
@@ -91,11 +92,23 @@ func (ctrl *Controller) RequestNFTClaimEmail() utils.PostHandler {
 			}
 		}
 
+		quizSubmission := models.QuizSubmission{}
+		ctrl.DB.Model(&quizSubmission).Where("claim_id = ?", body.QuizClaimID).First(&quizSubmission)
+
+		mailerMessage := shared_types.NewSendMailMessage(
+			quizSubmission.Email,
+			"Your hard earned NFT's are here",
+			2,
+			map[string]string{
+				"claim_url": body.QuizClaimID,
+			},
+		)
+
 		// Handle errors
-		ctrl.MQ.MailerQueue.PublishMessage(utils.Map{
-			"type":    "Send Mail",
-			"content": "Yay",
-		})
+		err := ctrl.MQ.MailerQueue.PublishMessage(mailerMessage)
+		if err != nil {
+			log.Println("Error sending mail")
+		}
 		return "Claim Mail Sent", nil
 	}
 }
@@ -152,7 +165,7 @@ func (ctrl *Controller) MintQuizNFT() utils.PostHandler {
 
 		// TODO: Create or get NFT Token URI
 
-		message := shared_types.NewMintQuizNFTMessage(*submission.Email, body.WalletAddress, "https://google.com")
+		message := shared_types.NewMintQuizNFTMessage(submission.Email, body.WalletAddress, "https://google.com")
 		if err := ctrl.MQ.NftQueue.PublishMessage(message); err != nil {
 			return nil, &utils.RequestError{
 				StatusCode: http.StatusInternalServerError,

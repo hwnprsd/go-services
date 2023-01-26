@@ -1,10 +1,10 @@
 package mailer
 
 import (
-	"fmt"
 	"log"
 	"net/smtp"
 	"os"
+	"strings"
 
 	"flaq.club/workers/models"
 	"github.com/hwnprsd/shared_types"
@@ -28,10 +28,10 @@ func SendSingleEmail(db *gorm.DB, data shared_types.SendMailMessage) {
 		return
 	}
 
-	log.Println(data.TemplateValues...)
-	log.Println(data.TemplateValues[len(data.TemplateValues)-1])
-
-	message := fmt.Sprintf(emailTemplate.TemplateString, data.TemplateValues...)
+	message := emailTemplate.TemplateString
+	for key, value := range data.TemplateValues {
+		message = strings.ReplaceAll(message, "{{ "+key+" }}", value)
+	}
 
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n"
 
@@ -47,8 +47,7 @@ func SendSingleEmail(db *gorm.DB, data shared_types.SendMailMessage) {
 
 	if err != nil {
 		log.Println("Error occoured sending email")
-		log.Println(err)
-		return
+		panic(err)
 	}
 	log.Println("Email sent succesfully")
 

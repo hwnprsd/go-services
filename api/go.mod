@@ -8,7 +8,7 @@ require (
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/gofiber/fiber/v2 v2.41.0
 	github.com/google/uuid v1.3.0
-	github.com/hwnprsd/shared_types v0.0.0-20230125152420-fb5e58a3a995
+	github.com/hwnprsd/shared_types v0.0.0-20230126144144-495ef5d91c59
 	github.com/streadway/amqp v1.0.0
 	gorm.io/driver/postgres v1.4.6
 	gorm.io/gorm v1.24.3
