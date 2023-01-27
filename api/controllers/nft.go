@@ -39,8 +39,9 @@ func (ctrl *Controller) MintPOAP() utils.PostHandler {
 }
 
 type SubmitQuizParticipationBody struct {
-	Email  string `json:"email,omitempty" validate:"required,email,min=6,max=32"`
-	QuizId string `json:"quiz_id,omitempty" validate:"required"`
+	Email           string `json:"email,omitempty" validate:"required,email,min=6,max=32"`
+	QuizId          string `json:"quiz_id,omitempty" validate:"required"`
+	ShouldSendEmail bool   `json:"should_send_email"`
 }
 
 func (ctrl *Controller) SubmitQuizParticipation() utils.PostHandler {
@@ -52,7 +53,7 @@ func (ctrl *Controller) SubmitQuizParticipation() utils.PostHandler {
 			QuizID:               body.QuizId,
 			ClaimID:              tokenId,
 			IsNFTClaimed:         false,
-			IsNFTClaimMailSent:   false,
+			IsNFTClaimMailSent:   body.ShouldSendEmail,
 			NFTClaimAttemptCount: 0,
 		}
 		result := ctrl.DB.Create(&quizSubmission)
@@ -61,6 +62,23 @@ func (ctrl *Controller) SubmitQuizParticipation() utils.PostHandler {
 				StatusCode: http.StatusInternalServerError,
 				Message:    "Error Creating Quiz Submission",
 				Err:        result.Error,
+			}
+		}
+
+		if body.ShouldSendEmail {
+			mailerMessage := shared_types.NewSendMailMessage(
+				quizSubmission.Email,
+				"Your hard earned NFT's are here",
+				2,
+				map[string]string{
+					"claim_url": tokenId,
+				},
+			)
+
+			// Handle errors
+			err := ctrl.MQ.MailerQueue.PublishMessage(mailerMessage)
+			if err != nil {
+				log.Println("Error sending mail")
 			}
 		}
 

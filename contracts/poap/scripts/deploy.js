@@ -17,10 +17,10 @@ async function main() {
   const NonFunToken = await ethers.getContractFactory("FlaqPOAP");
 
   // Deploy the contract
-  console.log("Deploying NonFunToken...");
+  console.log("Deploying FlaqInsignia...");
   const nonFunToken = await NonFunToken.deploy();
   await nonFunToken.deployed();
-  console.log(`FlaqPOAP deployed to: ${nonFunToken.address}`);
+  console.log(`FlaqInsginia deployed to: ${nonFunToken.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
