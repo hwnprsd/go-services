@@ -13,12 +13,22 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/hwnprsd/shared_types"
 	"github.com/streadway/amqp"
+	"gorm.io/gorm"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-func HandleMessages(payload *amqp.Delivery) {
+type NftMintHandler struct {
+	DB          *gorm.DB
+	MailerQueue *amqp.Channel
+}
+
+func NewNftMintHandler(db *gorm.DB) *NftMintHandler {
+	return &NftMintHandler{DB: db}
+}
+
+func (h *NftMintHandler) HandleMessages(payload *amqp.Delivery) {
 	baseMessage := shared_types.MessagingBase{}
 	defer func() {
 		if err := recover(); err != nil {
@@ -36,7 +46,7 @@ func HandleMessages(payload *amqp.Delivery) {
 	case shared_types.WORK_TYPE_MINT_POAP:
 		message := shared_types.MintPoapMessage{}
 		json.Unmarshal(payload.Body, &message)
-		MintPoap(message.Address, message.TokenURI)
+		h.MintPoap(message.Address, message.TokenURI)
 		break
 	case shared_types.WORK_TYPE_MINT_QUIZ_NFT:
 		message := shared_types.MintQuizNFTMessage{}
@@ -53,7 +63,7 @@ func failIfFalse(exists bool) {
 	}
 }
 
-func MintPoap(addressString string, uri string) {
+func (h *NftMintHandler) MintPoap(addressString string, uri string) {
 	log.Printf("Requesting to Mint POAP for address %s", addressString)
 	log.Printf("POAP Minting is not enabled at this time")
 	return

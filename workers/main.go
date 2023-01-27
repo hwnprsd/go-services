@@ -66,11 +66,14 @@ func ProcessQueue(channel amqp.Channel, queueName string, db *gorm.DB) {
 	if err != nil {
 		panic(err)
 	}
+
+	nftMintHander := nft.NewNftMintHandler(db)
+
 	go func() {
 		for message := range messages {
 			if queueName == QUEUE_NAME_NFT {
 				log.Println("Handling NFT Message")
-				nft.HandleMessages(&message)
+				nftMintHander.HandleMessages(&message)
 			}
 			if queueName == QUEUE_NAME_MAILER {
 				log.Println("Handling Mailer Message")
