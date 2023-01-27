@@ -1,0 +1,12 @@
+{
+  "description": "Certificate of completion for the NFTs - The Basics track from https://flaq.club, immortalized and authenticated as a one-of-a-kind NFT..",
+  "external_url": "https://flaq.club",
+  "image": "https://bafybeid5wnuokyt376t34p2vj5x2tetfwt6jvykkau4avw7iwn2h5p43lq.ipfs.nftstorage.link/nft_track.gif",
+  "name": "Flaq - NFTs The basics",
+  "attributes": [
+    {
+      "trait_type": "Level",
+      "value": "NFTs The Basics"
+    }
+  ]
+}

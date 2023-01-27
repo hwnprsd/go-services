@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -56,6 +57,7 @@ func (ctrl *Controller) SubmitQuizParticipation() utils.PostHandler {
 			IsNFTClaimMailSent:   body.ShouldSendEmail,
 			NFTClaimAttemptCount: 0,
 		}
+
 		result := ctrl.DB.Create(&quizSubmission)
 		if result.Error != nil {
 			return nil, &utils.RequestError{
@@ -68,10 +70,10 @@ func (ctrl *Controller) SubmitQuizParticipation() utils.PostHandler {
 		if body.ShouldSendEmail {
 			mailerMessage := shared_types.NewSendMailMessage(
 				quizSubmission.Email,
-				"Your hard earned NFT's are here",
+				"Congratulations! You have received a completion Insignia NFT from Flaq",
 				2,
 				map[string]string{
-					"claim_url": tokenId,
+					"claim_url": fmt.Sprintf("https://learn.flaq.club/claim-nft/%s", tokenId),
 				},
 			)
 
@@ -183,7 +185,7 @@ func (ctrl *Controller) MintQuizNFT() utils.PostHandler {
 
 		// TODO: Create or get NFT Token URI
 
-		message := shared_types.NewMintQuizNFTMessage(submission.Email, body.WalletAddress, "https://google.com")
+		message := shared_types.NewMintQuizNFTMessage(submission.Email, body.WalletAddress, "https://bafybeibb7ddws3smwceufpdgkj4zyqmirwfzgtbfubwrsp4gmebjkxbtde.ipfs.nftstorage.link/diveIntoWeb3_track.json")
 		if err := ctrl.MQ.NftQueue.PublishMessage(message); err != nil {
 			return nil, &utils.RequestError{
 				StatusCode: http.StatusInternalServerError,

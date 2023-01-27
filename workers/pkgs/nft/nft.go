@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"os"
 
+	"flaq.club/workers/pkgs/nft/FlaqInsignia"
 	"flaq.club/workers/pkgs/nft/FlaqPoap"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -51,7 +52,7 @@ func (h *NftMintHandler) HandleMessages(payload *amqp.Delivery) {
 	case shared_types.WORK_TYPE_MINT_QUIZ_NFT:
 		message := shared_types.MintQuizNFTMessage{}
 		json.Unmarshal(payload.Body, &message)
-		log.Printf("Requested to mint the NFT for addr %s", message.Address)
+		h.MintInsignia(message.Address, message.TokenURI)
 		break
 	}
 	payload.Ack(false)
@@ -60,6 +61,64 @@ func (h *NftMintHandler) HandleMessages(payload *amqp.Delivery) {
 func failIfFalse(exists bool) {
 	if !exists {
 		panic("Invalid ENV")
+	}
+}
+
+func (h *NftMintHandler) MintInsignia(addressString string, uri string) {
+	rpcUrl, exists := os.LookupEnv("ETH_RPC_URL")
+	failIfFalse(exists)
+	contractAddressString, exists := os.LookupEnv("CONTRACT_ADDRESS_QUIZ")
+	failIfFalse(exists)
+	privateKeyHex, exists := os.LookupEnv("PRIVATE_KEY")
+	failIfFalse(exists)
+	address := common.BytesToAddress([]byte(addressString))
+
+	client, err := ethclient.Dial(rpcUrl)
+	if err != nil {
+		panic(err)
+	}
+
+	privateKey, err := crypto.HexToECDSA(privateKeyHex)
+	if err != nil {
+		log.Println("Error converting Hex to ECDSA")
+		panic(err)
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+	}
+
+	contractAddress := common.HexToAddress(contractAddressString)
+
+	instance, err := FlaqInsignia.NewFlaqInsignia(contractAddress, client)
+	if err != nil {
+		panic(err)
+	}
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+
+	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(137))
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0)     // in wei
+	auth.GasLimit = uint64(300000) // in units
+	auth.GasPrice = gasPrice
+
+	tx, err := instance.MintInsignia(auth, address, uri)
+	if err != nil {
+		log.Println("ERROR MINTING POAP", err)
+	} else {
+		log.Printf("tx sent: %s", tx.Hash().Hex())
 	}
 }
 

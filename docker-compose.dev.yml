@@ -56,6 +56,7 @@ services:
     environment:
       AMQP_SERVER_URL: amqp://rabbitmq:5672
       ETH_RPC_URL: "http://host.docker.internal:8545/"
+      CONTRACT_ADDRESS_QUIZ: ${CONTRACT_ADDRESS_QUIZ}
       CONTRACT_ADDRESS: ${CONTRACT_ADDRESS}
       PRIVATE_KEY: ${PRIVATE_KEY}
       SMTP_USER: ${SMTP_USER}
