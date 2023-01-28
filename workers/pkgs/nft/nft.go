@@ -110,6 +110,7 @@ func (h *NftMintHandler) MintInsignia(addressString string, uri string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	chainId, _ := strconv.ParseInt(chainIdString, 10, 64)
 	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(chainId))
 	auth.Nonce = big.NewInt(int64(nonce))

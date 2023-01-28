@@ -183,8 +183,15 @@ func (ctrl *Controller) MintQuizNFT() utils.PostHandler {
 			}
 		}
 
-		// TODO: Create or get NFT Token URI
+		if submission.IsNFTClaimed {
+			return nil, &utils.RequestError{
+				StatusCode: http.StatusBadRequest,
+				Message:    "NFT is already claimed for this Claim ID",
+				Err:        errors.New("Error claiming NFT"),
+			}
+		}
 
+		// TODO: Create or get NFT Token URI
 		message := shared_types.NewMintQuizNFTMessage(submission.Email, body.WalletAddress, "https://bafybeibb7ddws3smwceufpdgkj4zyqmirwfzgtbfubwrsp4gmebjkxbtde.ipfs.nftstorage.link/diveIntoWeb3_track.json")
 		if err := ctrl.MQ.NftQueue.PublishMessage(message); err != nil {
 			return nil, &utils.RequestError{
