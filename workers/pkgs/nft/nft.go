@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"strconv"
 
 	"flaq.club/workers/pkgs/nft/FlaqInsignia"
 	"flaq.club/workers/pkgs/nft/FlaqPoap"
@@ -65,6 +66,8 @@ func failIfFalse(exists bool) {
 }
 
 func (h *NftMintHandler) MintInsignia(addressString string, uri string) {
+	chainIdString, exists := os.LookupEnv("CHAIN_ID")
+	failIfFalse(exists)
 	rpcUrl, exists := os.LookupEnv("ETH_RPC_URL")
 	failIfFalse(exists)
 	contractAddressString, exists := os.LookupEnv("CONTRACT_ADDRESS_QUIZ")
@@ -107,8 +110,8 @@ func (h *NftMintHandler) MintInsignia(addressString string, uri string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(137))
+	chainId, _ := strconv.ParseInt(chainIdString, 10, 64)
+	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(chainId))
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)     // in wei
 	auth.GasLimit = uint64(300000) // in units
@@ -127,6 +130,8 @@ func (h *NftMintHandler) MintPoap(addressString string, uri string) {
 	log.Printf("POAP Minting is not enabled at this time")
 	return
 
+	chainIdString, exists := os.LookupEnv("CHAIN_ID")
+	failIfFalse(exists)
 	rpcUrl, exists := os.LookupEnv("ETH_RPC_URL")
 	failIfFalse(exists)
 	contractAddressString, exists := os.LookupEnv("CONTRACT_ADDRESS")
@@ -169,7 +174,8 @@ func (h *NftMintHandler) MintPoap(addressString string, uri string) {
 		log.Fatal(err)
 	}
 
-	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(137))
+	chainId, _ := strconv.ParseInt(chainIdString, 10, 64)
+	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(chainId))
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)     // in wei
 	auth.GasLimit = uint64(300000) // in units

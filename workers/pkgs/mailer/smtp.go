@@ -47,6 +47,7 @@ func SendSingleEmail(db *gorm.DB, data shared_types.SendMailMessage) {
 
 	if err != nil {
 		log.Println("Error occoured sending email")
+		log.Println("SMTP HOST", smtpHost)
 		panic(err)
 	}
 	log.Println("Email sent succesfully")

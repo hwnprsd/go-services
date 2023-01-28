@@ -12,11 +12,10 @@ import (
 func HandleMessages(payload *amqp.Delivery, db *gorm.DB) {
 	baseMessage := shared_types.MessagingBase{}
 	defer func() {
-		// if err := recover(); err != nil {
-		// 	log.Println("panic occurred:", err)
-		// 	// payload.Reject(false)
-		// 	panic()
-		// }
+		if err := recover(); err != nil {
+			log.Println("panic occurred:", err)
+			payload.Reject(false)
+		}
 	}()
 	err := json.Unmarshal(payload.Body, &baseMessage)
 	if err != nil {
