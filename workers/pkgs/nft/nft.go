@@ -49,7 +49,9 @@ func (h *NftMintHandler) HandleMessages(payload *amqp.Delivery) {
 	case shared_types.WORK_TYPE_MINT_POAP:
 		message := shared_types.MintPoapMessage{}
 		json.Unmarshal(payload.Body, &message)
-		h.MintPoap(message.Address, message.TokenURI)
+		log.Println("Asking to mint POAP when disabled")
+		// Enable when live
+		// h.MintPoap(message.Address, message.TokenURI)
 		break
 	case shared_types.WORK_TYPE_MINT_QUIZ_NFT:
 		message := shared_types.MintQuizNFTMessage{}

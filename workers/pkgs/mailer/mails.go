@@ -27,6 +27,6 @@ func HandleMessages(payload *amqp.Delivery, db *gorm.DB) {
 		message := shared_types.SendMailMessage{}
 		json.Unmarshal(payload.Body, &message)
 		SendSingleEmail(db, message)
-
 	}
+	payload.Ack(false)
 }
