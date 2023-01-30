@@ -18,6 +18,10 @@ const RPC_URL = process.env.RPC_URL;
 module.exports = {
   solidity: "0.8.9",
   networks: {
+    matic: {
+      url: RPC_URL,
+      accounts: [PRIVATE_KEY],
+    },
     "matic-testnet": {
       url: RPC_URL,
       accounts: [PRIVATE_KEY],

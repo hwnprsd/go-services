@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/big"
 	"os"
@@ -68,13 +69,18 @@ func failIfFalse(exists bool) {
 func (h *NftMintHandler) MintInsignia(addressString string, uri string) {
 	chainIdString, exists := os.LookupEnv("CHAIN_ID")
 	failIfFalse(exists)
+	chainId, _ := strconv.ParseInt(chainIdString, 10, 64)
 	rpcUrl, exists := os.LookupEnv("ETH_RPC_URL")
 	failIfFalse(exists)
-	contractAddressString, exists := os.LookupEnv("CONTRACT_ADDRESS_QUIZ")
+	contractAddressStringPartial, exists := os.LookupEnv("CONTRACT_ADDRESS_QUIZ")
 	failIfFalse(exists)
 	privateKeyHex, exists := os.LookupEnv("PRIVATE_KEY")
 	failIfFalse(exists)
 	address := common.BytesToAddress([]byte(addressString))
+
+	contractAddressString := fmt.Sprintf("0x%s", contractAddressStringPartial)
+
+	log.Printf("Minting on RPC := %s and chain ID := %d and Contract Address := %s", rpcUrl, chainId, contractAddressString)
 
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
@@ -111,7 +117,6 @@ func (h *NftMintHandler) MintInsignia(addressString string, uri string) {
 		log.Fatal(err)
 	}
 
-	chainId, _ := strconv.ParseInt(chainIdString, 10, 64)
 	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(chainId))
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)     // in wei
@@ -127,20 +132,17 @@ func (h *NftMintHandler) MintInsignia(addressString string, uri string) {
 }
 
 func (h *NftMintHandler) MintPoap(addressString string, uri string) {
-	log.Printf("Requesting to Mint POAP for address %s", addressString)
-	log.Printf("POAP Minting is not enabled at this time")
-	return
-
 	chainIdString, exists := os.LookupEnv("CHAIN_ID")
 	failIfFalse(exists)
 	rpcUrl, exists := os.LookupEnv("ETH_RPC_URL")
 	failIfFalse(exists)
-	contractAddressString, exists := os.LookupEnv("CONTRACT_ADDRESS")
+	contractAddressStringPartial, exists := os.LookupEnv("CONTRACT_ADDRESS")
 	failIfFalse(exists)
 	privateKeyHex, exists := os.LookupEnv("PRIVATE_KEY")
 	failIfFalse(exists)
 	address := common.BytesToAddress([]byte(addressString))
 
+	contractAddressString := fmt.Sprintf("0x%s", contractAddressStringPartial)
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
 		panic(err)

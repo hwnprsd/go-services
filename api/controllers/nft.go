@@ -11,6 +11,7 @@ import (
 	"flaq.club/api/utils"
 	"github.com/google/uuid"
 	"github.com/hwnprsd/shared_types"
+	"gorm.io/gorm/clause"
 )
 
 type MintNftBody struct {
@@ -58,7 +59,7 @@ func (ctrl *Controller) SubmitQuizParticipation() utils.PostHandler {
 			NFTClaimAttemptCount: 0,
 		}
 
-		result := ctrl.DB.Create(&quizSubmission)
+		result := ctrl.DB.Clauses(clause.Returning{}).Create(&quizSubmission)
 		if result.Error != nil {
 			return nil, &utils.RequestError{
 				StatusCode: http.StatusInternalServerError,
@@ -77,6 +78,7 @@ func (ctrl *Controller) SubmitQuizParticipation() utils.PostHandler {
 				},
 			)
 
+			log.Println("Sending Claim Email")
 			// Handle errors
 			err := ctrl.MQ.MailerQueue.PublishMessage(mailerMessage)
 			if err != nil {
@@ -84,7 +86,7 @@ func (ctrl *Controller) SubmitQuizParticipation() utils.PostHandler {
 			}
 		}
 
-		return tokenId, nil
+		return quizSubmission, nil
 	}
 }
 
@@ -192,7 +194,8 @@ func (ctrl *Controller) MintQuizNFT() utils.PostHandler {
 		}
 
 		// TODO: Create or get NFT Token URI
-		message := shared_types.NewMintQuizNFTMessage(submission.Email, body.WalletAddress, "https://bafybeibb7ddws3smwceufpdgkj4zyqmirwfzgtbfubwrsp4gmebjkxbtde.ipfs.nftstorage.link/diveIntoWeb3_track.json")
+		tokenUri := "https://bafybeibb7ddws3smwceufpdgkj4zyqmirwfzgtbfubwrsp4gmebjkxbtde.ipfs.nftstorage.link/diveIntoWeb3_track.json"
+		message := shared_types.NewMintQuizNFTMessage(submission.Email, body.WalletAddress, tokenUri)
 		if err := ctrl.MQ.NftQueue.PublishMessage(message); err != nil {
 			return nil, &utils.RequestError{
 				StatusCode: http.StatusInternalServerError,
@@ -200,6 +203,9 @@ func (ctrl *Controller) MintQuizNFT() utils.PostHandler {
 				Err:        err,
 			}
 		}
+
+		// Expecting no errors at this point
+		ctrl.DB.Model(&models.QuizSubmission{}).Where("claim_id = ?", submission.ClaimID).Update("is_nft_claimed", true)
 
 		return "NFT Minting Started - Email will be sent upon completion", nil
 
