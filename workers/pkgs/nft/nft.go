@@ -56,7 +56,8 @@ func (h *NftMintHandler) HandleMessages(payload *amqp.Delivery) {
 	case shared_types.WORK_TYPE_MINT_QUIZ_NFT:
 		message := shared_types.MintQuizNFTMessage{}
 		json.Unmarshal(payload.Body, &message)
-		h.MintInsignia(message.Address, message.TokenURI)
+		ownerAddress := common.HexToAddress(message.Address)
+		h.MintInsignia(ownerAddress, message.TokenURI)
 		break
 	}
 	payload.Ack(false)
@@ -68,7 +69,7 @@ func failIfFalse(exists bool) {
 	}
 }
 
-func (h *NftMintHandler) MintInsignia(addressString string, uri string) {
+func (h *NftMintHandler) MintInsignia(address common.Address, uri string) {
 	chainIdString, exists := os.LookupEnv("CHAIN_ID")
 	failIfFalse(exists)
 	chainId, _ := strconv.ParseInt(chainIdString, 10, 64)
@@ -78,11 +79,11 @@ func (h *NftMintHandler) MintInsignia(addressString string, uri string) {
 	failIfFalse(exists)
 	privateKeyHex, exists := os.LookupEnv("PRIVATE_KEY")
 	failIfFalse(exists)
-	address := common.BytesToAddress([]byte(addressString))
 
+	// Remember to remove "0x" form the address provided in the ENV, to ensure that docker compose doesn't end up parsing the hex
 	contractAddressString := fmt.Sprintf("0x%s", contractAddressStringPartial)
 
-	log.Printf("Minting on RPC := %s and chain ID := %d and Contract Address := %s", rpcUrl, chainId, contractAddressString)
+	log.Printf("Minting on RPC := %s and chain ID := %d and Owner Address := %s", rpcUrl, chainId, contractAddressString)
 
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {

@@ -30,7 +30,7 @@ func (t *TaskHandler) HandleIncomingMessages() {
 func (handler *TaskHandler) ProcessTask(ctx context.Context, t *asynq.Task) error {
 	switch t.Type() {
 	case "Newsletter":
-		log.Printf("Handling newsletters")
+		log.Println("Handling newsletters")
 		jsonString, _ := json.Marshal(map[string]string{
 			"Hey": "Brother",
 		})

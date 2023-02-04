@@ -74,7 +74,8 @@ func (ctrl *Controller) SubmitQuizParticipation() utils.PostHandler {
 				"Congratulations! You have received a completion Insignia NFT from Flaq",
 				2,
 				map[string]string{
-					"claim_url": fmt.Sprintf("https://learn.flaq.club/claim-nft/%s", tokenId),
+					"claim_url":        fmt.Sprintf("https://learn.flaq.club/claim-nft/%s", tokenId),
+					"claim_url_mobile": fmt.Sprintf("https://metamask.app.link/dapp/learn.flaq.club/claim-nft/%s", tokenId),
 				},
 			)
 
