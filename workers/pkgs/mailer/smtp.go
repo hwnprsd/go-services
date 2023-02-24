@@ -12,6 +12,7 @@ import (
 )
 
 func SendSingleEmail(db *gorm.DB, data shared_types.SendMailMessage) {
+	log.SetPrefix("MAIL_HANDLER: ")
 	log.Println("Attempting to send single email")
 	smtpHost := os.Getenv("SMTP_HOST")
 	smtpPassword := os.Getenv("SMTP_PASSWORD")

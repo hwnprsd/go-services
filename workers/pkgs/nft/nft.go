@@ -12,6 +12,7 @@ import (
 
 	"flaq.club/workers/pkgs/nft/FlaqInsignia"
 	"flaq.club/workers/pkgs/nft/FlaqPoap"
+	"flaq.club/workers/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/hwnprsd/shared_types"
@@ -27,8 +28,8 @@ type NftMintHandler struct {
 	MailerQueue *amqp.Channel
 }
 
-func NewNftMintHandler(db *gorm.DB) *NftMintHandler {
-	return &NftMintHandler{DB: db}
+func NewNftMintHandler(mailerQueue *amqp.Channel, db *gorm.DB) *NftMintHandler {
+	return &NftMintHandler{DB: db, MailerQueue: mailerQueue}
 }
 
 func (h *NftMintHandler) HandleMessages(payload *amqp.Delivery) {
@@ -51,7 +52,7 @@ func (h *NftMintHandler) HandleMessages(payload *amqp.Delivery) {
 		json.Unmarshal(payload.Body, &message)
 		log.Println("Asking to mint POAP when disabled")
 		// Enable when live
-		// h.MintPoap(message.Address, message.TokenURI)
+		h.MintPoap(message)
 		break
 	case shared_types.WORK_TYPE_MINT_QUIZ_NFT:
 		message := shared_types.MintQuizNFTMessage{}
@@ -134,7 +135,8 @@ func (h *NftMintHandler) MintInsignia(address common.Address, uri string) {
 	}
 }
 
-func (h *NftMintHandler) MintPoap(addressString string, uri string) {
+func (h *NftMintHandler) MintPoap(message shared_types.MintPoapMessage) {
+	log.SetPrefix("NFT_MINTER: ")
 	chainIdString, exists := os.LookupEnv("CHAIN_ID")
 	failIfFalse(exists)
 	rpcUrl, exists := os.LookupEnv("ETH_RPC_URL")
@@ -143,7 +145,7 @@ func (h *NftMintHandler) MintPoap(addressString string, uri string) {
 	failIfFalse(exists)
 	privateKeyHex, exists := os.LookupEnv("PRIVATE_KEY")
 	failIfFalse(exists)
-	address := common.BytesToAddress([]byte(addressString))
+	address := common.HexToAddress(message.Address)
 
 	contractAddressString := fmt.Sprintf("0x%s", contractAddressStringPartial)
 	client, err := ethclient.Dial(rpcUrl)
@@ -187,11 +189,36 @@ func (h *NftMintHandler) MintPoap(addressString string, uri string) {
 	auth.GasLimit = uint64(300000) // in units
 	auth.GasPrice = gasPrice
 
-	tx, err := instance.MintCollectionNFT(auth, address, uri)
+	tx, err := instance.MintCollectionNFT(auth, address, message.TokenURI)
 	if err != nil {
 		log.Println("ERROR MINTING POAP", err)
 	} else {
 		log.Printf("tx sent: %s", tx.Hash().Hex())
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	log.Println("Confirming")
+	r, err := bind.WaitMined(ctx, client, tx)
+	if err != nil {
+		log.Println("ERROR Confirming POAP", err)
+	} else {
+		log.Println("Confirmed:", r.TxHash.String())
+	}
+
+	log.Println("Sending mail message")
+	mailMessage := shared_types.NewSendMailMessage(
+		message.Email,
+		"Thank you for attending an event with Flaq",
+		message.EmailTemplateId,
+		map[string]string{
+			"EVENT_NAME":  "Flaq x Web3 Gorkha Siliguri",
+			"USER_NAME":   message.Name,
+			"RARIBLE_URL": fmt.Sprintf("https://rarible.com/user/%s/owned", message.Address),
+			"TX_URL":      fmt.Sprintf("https://polygonscan.com/tx/%s", r.TxHash.String()),
+		},
+	)
+	if message.Email != "" {
+		utils.PublishMessage(h.MailerQueue, "mailer", mailMessage)
 	}
 
 }

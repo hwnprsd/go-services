@@ -11,6 +11,7 @@ type Messaging struct {
 	MailerQueue    *Queue
 	SchedulerQueue *Queue
 	NftQueue       *Queue
+	GifQueue       *Queue
 }
 
 type Queue struct {
@@ -43,14 +44,17 @@ func (m *Messaging) Setup() func() {
 	queue1, closeFunc1 := m.CreateQueue("mailer")
 	queue2, closeFunc2 := m.CreateQueue("scheduler")
 	queue3, closeFunc3 := m.CreateQueue("nft")
+	queue4, closeFunc4 := m.CreateQueue("gif")
 	m.MailerQueue = queue1
 	m.SchedulerQueue = queue2
 	m.NftQueue = queue3
+	m.GifQueue = queue4
 
 	return func() {
 		closeFunc1()
 		closeFunc2()
 		closeFunc3()
+		closeFunc4()
 	}
 }
 

@@ -53,6 +53,8 @@ services:
       PG_USERNAME: postgres
       PG_PASSWORD: postgres
       PG_PORT: 5432
+      AWS_ACCOUNT_ID: ${AWS_ACCOUNT_ID}
+      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
     restart: always
     networks:
       - flaq_net

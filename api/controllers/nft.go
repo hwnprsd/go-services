@@ -16,7 +16,7 @@ import (
 
 type MintNftBody struct {
 	Email         string `json:"email,omitempty" validate:"required,email,min=6,max=32"`
-	Name          string `json:"name,omitempty" validate:"required,min=3,max=12"`
+	Name          string `json:"name,omitempty" validate:"required,min=3,max=23"`
 	WalletAddress string `validate:"required,min=42,max=42" json:"wallet_address,omitempty"`
 	TokenURI      string `json:"token_uri,omitempty" validate:"required"`
 	MintSecret    string `json:"mint_secret,omitempty" validate:"required"`
@@ -34,8 +34,10 @@ func (ctrl *Controller) MintPOAP() utils.PostHandler {
 				Err:        errors.New("Invalid secret provided for minting"),
 			}
 		}
-		payload := shared_types.NewMintPoapMessage(body.Email, body.WalletAddress, body.Name, body.TokenURI)
-		ctrl.MQ.NftQueue.PublishMessage(*payload)
+		// payload := shared_types.NewMintPoapMessage(body.Email, body.WalletAddress, body.Name, body.TokenURI, 1)
+		payload2 := shared_types.NewCreateGifMessage(1, 3, body.Name, body.WalletAddress, body.Email)
+		ctrl.MQ.GifQueue.PublishMessage(*payload2)
+		// ctrl.MQ.NftQueue.PublishMessage(*payload)
 		return "NFT Minting Started. Check back on your email", nil
 	}
 }

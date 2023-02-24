@@ -22,7 +22,7 @@ func Connect() *gorm.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = dbInstance.AutoMigrate(&models.EmailTemplate{}, &models.NftMint{})
+	err = dbInstance.AutoMigrate(&models.EmailTemplate{}, &models.NftMint{}, &models.Web3Event{})
 	if err != nil {
 		log.Fatal(err)
 	}

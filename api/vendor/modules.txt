@@ -25,7 +25,7 @@ github.com/gofiber/fiber/v2/utils
 # github.com/google/uuid v1.3.0
 ## explicit
 github.com/google/uuid
-# github.com/hwnprsd/shared_types v0.0.0-20230126144144-495ef5d91c59
+# github.com/hwnprsd/shared_types v0.0.0-20230223171628-cc686ee5b936
 ## explicit; go 1.19
 github.com/hwnprsd/shared_types
 # github.com/jackc/pgpassfile v1.0.0

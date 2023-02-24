@@ -18,6 +18,9 @@ FROM gcr.io/distroless/base-debian10
 WORKDIR /
 
 COPY --from=build /exe /exe
+COPY --from=build /src/assets/final-poap.gif .
+COPY --from=build /src/assets/SpaceMono-Regular.ttf .
+
 
 USER nonroot:nonroot
 
