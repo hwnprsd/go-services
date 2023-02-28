@@ -5,7 +5,7 @@ COPY go.mod /src
 COPY go.sum /src 
 # Download all the deps
 RUN go mod download 
-COPY *.go ./
+COPY . ./
 # Build the executable
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 RUN go build -o /exe

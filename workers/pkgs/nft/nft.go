@@ -16,6 +16,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/hwnprsd/shared_types"
+	"github.com/hwnprsd/shared_types/status"
 	"github.com/streadway/amqp"
 	"gorm.io/gorm"
 
@@ -24,12 +25,12 @@ import (
 )
 
 type NftMintHandler struct {
-	DB          *gorm.DB
-	MailerQueue *amqp.Channel
+	DB                    *gorm.DB
+	ApiQueue, MailerQueue *utils.Queue
 }
 
-func NewNftMintHandler(mailerQueue *amqp.Channel, db *gorm.DB) *NftMintHandler {
-	return &NftMintHandler{DB: db, MailerQueue: mailerQueue}
+func NewNftMintHandler(apiQueue, mailerQueue *utils.Queue, db *gorm.DB) *NftMintHandler {
+	return &NftMintHandler{DB: db, MailerQueue: mailerQueue, ApiQueue: apiQueue}
 }
 
 func (h *NftMintHandler) HandleMessages(payload *amqp.Delivery) {
@@ -136,6 +137,10 @@ func (h *NftMintHandler) MintInsignia(address common.Address, uri string) {
 }
 
 func (h *NftMintHandler) MintPoap(message shared_types.MintPoapMessage) {
+
+	startMessage := shared_types.NewApiCallbackMessage(message.TaskId, status.POAP_MINT_START, "")
+	h.ApiQueue.PublishMessage(startMessage)
+
 	log.SetPrefix("NFT_MINTER: ")
 	chainIdString, exists := os.LookupEnv("CHAIN_ID")
 	failIfFalse(exists)
@@ -207,18 +212,21 @@ func (h *NftMintHandler) MintPoap(message shared_types.MintPoapMessage) {
 
 	log.Println("Sending mail message")
 	mailMessage := shared_types.NewSendMailMessage(
+		message.TaskId,
 		message.Email,
-		"Thank you for attending an event with Flaq",
+		"[NFT Inside] Thank you for attending an event with Flaq!",
 		message.EmailTemplateId,
 		map[string]string{
-			"EVENT_NAME":  "Flaq x Web3 Gorkha Siliguri",
+			"EVENT_NAME":  "Web3 Gorkha Siliguri Event",
 			"USER_NAME":   message.Name,
 			"RARIBLE_URL": fmt.Sprintf("https://rarible.com/user/%s/owned", message.Address),
 			"TX_URL":      fmt.Sprintf("https://polygonscan.com/tx/%s", r.TxHash.String()),
 		},
 	)
+	endMessage := shared_types.NewApiCallbackMessage(message.TaskId, status.POAP_MINT_COMPLETE, "")
+	h.ApiQueue.PublishMessage(endMessage)
 	if message.Email != "" {
-		utils.PublishMessage(h.MailerQueue, "mailer", mailMessage)
+		h.MailerQueue.PublishMessage(mailMessage)
 	}
 
 }

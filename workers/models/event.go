@@ -28,4 +28,5 @@ type Web3Event struct {
 	TextX            uint           `json:"text_x"`
 	TextY            uint           `json:"text_y"`
 	BucketName       string         `json:"bucket_name"`
+	EmailTemplateID  uint           `json:"email_template_id"`
 }

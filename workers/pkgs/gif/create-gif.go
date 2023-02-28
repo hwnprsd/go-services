@@ -8,6 +8,7 @@ import (
 	"flaq.club/workers/models"
 	"github.com/google/uuid"
 	"github.com/hwnprsd/shared_types"
+	"github.com/hwnprsd/shared_types/status"
 	"github.com/streadway/amqp"
 	"gorm.io/gorm"
 
@@ -31,11 +32,12 @@ import (
 
 type CreateGifHandler struct {
 	DB       *gorm.DB
-	NftQueue *amqp.Channel
+	ApiQueue *utils.Queue
+	NftQueue *utils.Queue
 }
 
-func NewCreateGifHandler(nftQueue *amqp.Channel, db *gorm.DB) *CreateGifHandler {
-	return &CreateGifHandler{NftQueue: nftQueue, DB: db}
+func NewCreateGifHandler(apiQueue, nftQueue *utils.Queue, db *gorm.DB) *CreateGifHandler {
+	return &CreateGifHandler{ApiQueue: apiQueue, NftQueue: nftQueue, DB: db}
 }
 
 func (h *CreateGifHandler) HandleMessages(payload *amqp.Delivery) {
@@ -95,6 +97,9 @@ func (h *CreateGifHandler) CreateGif(message shared_types.CreateGifMessage) erro
 	if err != nil {
 		panic(err)
 	}
+
+	startMessage := shared_types.NewApiCallbackMessage(message.TaskId, status.POAP_CREATE_GIF_START, "")
+	h.ApiQueue.PublishMessage(startMessage)
 
 	// Create a new GIF that will hold the modified frames
 	newGif := &gif.GIF{}
@@ -196,14 +201,32 @@ func (h *CreateGifHandler) CreateGif(message shared_types.CreateGifMessage) erro
 	log.Println("GIF Created - ", jsonUrl)
 
 	nftMintMessage := shared_types.NewMintPoapMessage(
+		message.TaskId,
 		message.UserEmail,
 		message.UserWalletAddress,
 		message.UserName,
 		jsonUrl,
-		message.EmailTemplateId,
+		event.EmailTemplateID,
 	)
 
+	newUser := models.MailingUser{
+		EmailAddress:  message.UserEmail,
+		WalletAddress: message.UserWalletAddress,
+		Name:          message.UserName,
+		Level:         1,
+	}
+
+	res := h.DB.Create(&newUser)
+	if res.Error != nil {
+		log.Println("Error adding a new user or User already exists")
+		log.Println(res.Error)
+	}
+
+	// End Message
+	endMessage := shared_types.NewApiCallbackMessage(message.TaskId, status.POAP_CREATE_GIF_COMPLETE, "")
+	h.ApiQueue.PublishMessage(endMessage)
+
 	// Publish a message asking to mint the NFT
-	utils.PublishMessage(h.NftQueue, "nft", nftMintMessage)
+	h.NftQueue.PublishMessage(nftMintMessage)
 	return nil
 }

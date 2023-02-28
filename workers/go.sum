@@ -54,6 +54,14 @@ github.com/hwnprsd/shared_types v0.0.0-20230223171406-d04a52dc1cd0 h1:0Nod2cgiuP
 github.com/hwnprsd/shared_types v0.0.0-20230223171406-d04a52dc1cd0/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
 github.com/hwnprsd/shared_types v0.0.0-20230223171628-cc686ee5b936 h1:UmZJGbOXsQtwWRRiTKnN1xjE8J1cCNR+0RpqEnerFu0=
 github.com/hwnprsd/shared_types v0.0.0-20230223171628-cc686ee5b936/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
+github.com/hwnprsd/shared_types v0.0.0-20230226135018-f1b5139921e4 h1:PFBoFh2WQn77sLAocoscnY0hHSqU9MJj3+EIcCpI3SQ=
+github.com/hwnprsd/shared_types v0.0.0-20230226135018-f1b5139921e4/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
+github.com/hwnprsd/shared_types v0.0.0-20230226135713-8670a5388bb4 h1:rN8JyNVoutK1sJk5OcclaoCcUTyzfMeDHdHz3zNhelM=
+github.com/hwnprsd/shared_types v0.0.0-20230226135713-8670a5388bb4/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
+github.com/hwnprsd/shared_types v0.0.0-20230226141041-568dd5d2559d h1:acw6eUYfDwb/c+f3pbJHpIpFA29qHaIXOzWP1jX2Mb0=
+github.com/hwnprsd/shared_types v0.0.0-20230226141041-568dd5d2559d/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
+github.com/hwnprsd/shared_types v0.0.0-20230227060730-b1855b6e7e66 h1:nYD2SDDpSJFV8dXlF+oLCU9Wq8ZVzvjj298L7OIdZ1c=
+github.com/hwnprsd/shared_types v0.0.0-20230227060730-b1855b6e7e66/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
 github.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=
 github.com/jackc/pgpassfile v1.0.0/go.mod h1:CEx0iS5ambNFdcRtxPj5JhEz+xB6uRky5eyVu/W2HEg=
 github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b/go.mod h1:vsD4gTJCa9TptPL8sPkXrLZ+hDuNrZCnj29CQpr4X1E=

@@ -22,7 +22,7 @@ func Connect() *gorm.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = dbInstance.AutoMigrate(&models.User{}, &models.QuizSubmission{})
+	err = dbInstance.AutoMigrate(&models.User{}, &models.QuizSubmission{}, &models.Task{})
 	if err != nil {
 		log.Fatal(err)
 	}

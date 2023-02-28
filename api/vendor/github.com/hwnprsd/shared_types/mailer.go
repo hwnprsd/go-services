@@ -1,5 +1,7 @@
 package shared_types
 
+import "time"
+
 const (
 	WORK_TYPE_SEND_MAIL           = "SEND_MAIL"
 	WORK_TYPE_ADD_USER_TO_LIST    = "MAILER_ADD_USER_LIST"
@@ -7,6 +9,8 @@ const (
 	WORK_TYPE_REMOVE_USER_TO_LIST = "MAILER_REMOVE_USER_LIST"
 	WORK_TYPE_TRIGGER_CAMPAIGN    = "MAILER_TRIGGER_CAMPAIGN"
 	WORK_TYPE_CAMPAIGN_SUCCESS    = "MAILER_CAMPAIGN_SUCCESS"
+
+	WORK_TYPE_SCHEDULE_EMAIL = "SCHEDULE_EMAIL"
 )
 
 type SendMailMessage struct {
@@ -17,15 +21,31 @@ type SendMailMessage struct {
 	TemplateValues map[string]string
 }
 
-func NewSendMailMessage(email string, subject string, templateId uint, values map[string]string) *SendMailMessage {
+func NewSendMailMessage(taskId uint, email string, subject string, templateId uint, values map[string]string) *SendMailMessage {
 	return &SendMailMessage{
-		MessagingBase: MessagingBase{
-			WorkType: WORK_TYPE_SEND_MAIL,
-		},
-		EmailAddress:   email,
-		Subject:        subject,
-		BodyTemplateID: templateId,
-		TemplateValues: values,
+		*NewMessagingBase(taskId, WORK_TYPE_SEND_MAIL),
+		email,
+		subject, // Subject should come from the DB not via a message
+		templateId,
+		values,
+	}
+}
+
+type ScheduleEmailsMessage struct {
+	MessagingBase
+	ListName        string
+	ScheduledTime   time.Time
+	EmailTemplateId uint
+	TemplateValues  map[string]string
+}
+
+func NewScheduleEmailMessage(taskId, emailTemplateId uint, listName string, scheduledTime time.Time, templateValues map[string]string) *ScheduleEmailsMessage {
+	return &ScheduleEmailsMessage{
+		*NewMessagingBase(taskId, WORK_TYPE_SCHEDULE_EMAIL),
+		listName,
+		scheduledTime,
+		emailTemplateId,
+		templateValues,
 	}
 }
 

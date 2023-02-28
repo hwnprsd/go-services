@@ -8,6 +8,7 @@ import (
 	"flaq.club/workers/pkgs/gif"
 	"flaq.club/workers/pkgs/mailer"
 	"flaq.club/workers/pkgs/nft"
+	"flaq.club/workers/utils"
 	"github.com/streadway/amqp"
 	"gorm.io/gorm"
 )
@@ -15,6 +16,7 @@ import (
 const QUEUE_NAME_MAILER = "mailer"
 const QUEUE_NAME_NFT = "nft"
 const QUEUE_NAME_GIF = "gif"
+const QUEUE_NAME_API = "api"
 
 // main function  
 func main() {
@@ -25,92 +27,76 @@ func main() {
 	}
 	defer connectRabbitMq.Close()
 	log.Println("Mailer Listener Started")
-	queues := []string{QUEUE_NAME_MAILER, QUEUE_NAME_NFT, QUEUE_NAME_GIF}
 	forever := make(chan bool)
 	db := database.Connect()
-	for _, queue := range queues {
-		channel, err := connectRabbitMq.Channel()
-		if err != nil {
-			panic(err)
-		}
-		defer channel.Close()
-		defer log.Printf("QUEUE CLOSED! QUEUE CLOSED! QUEUE CLOSED! QUEUE CLOSED!")
-		go ProcessQueue(connectRabbitMq, *channel, queue, db)
+	apiQueue, cancelFunc1 := utils.CreateQueue(*connectRabbitMq, QUEUE_NAME_API)
+	nftQueue, cancelFunc2 := utils.CreateQueue(*connectRabbitMq, QUEUE_NAME_NFT)
+	gifQueue, cancelFunc3 := utils.CreateQueue(*connectRabbitMq, QUEUE_NAME_GIF)
+	mailerQueue, cancelFunc4 := utils.CreateQueue(*connectRabbitMq, QUEUE_NAME_MAILER)
+	defer func() {
+		cancelFunc1()
+		cancelFunc2()
+		cancelFunc3()
+		cancelFunc4()
+		log.Println("Cancelling all functions")
+	}()
+
+	handler := WorkHandler{
+		ApiQueue:    apiQueue,
+		NFTQueue:    nftQueue,
+		MailerQueue: mailerQueue,
+		GifQueue:    gifQueue,
+		Db:          db,
 	}
+	go handler.ProcessQueue(handler.GifQueue)
+	go handler.ProcessQueue(handler.NFTQueue)
+	go handler.ProcessQueue(handler.MailerQueue)
 	<-forever
 }
 
-func ProcessQueue(connection *amqp.Connection, channel amqp.Channel, queueName string, db *gorm.DB) {
+type WorkHandler struct {
+	ApiQueue    *utils.Queue
+	NFTQueue    *utils.Queue
+	MailerQueue *utils.Queue
+	GifQueue    *utils.Queue
+	Db          *gorm.DB
+}
 
-	channel.QueueDeclare(
-		queueName,
-		true,  // durable
-		false, // auto delete
-		false, // exclusive
-		false, // no wait
-		nil,   // arguments
-	)
-
+func (h *WorkHandler) ProcessQueue(queue *utils.Queue) {
 	// Subscribing to QueueService1 for getting messages.
-	messages, err := channel.Consume(
-		queueName, // queue name
-		"",        // consumer
-		false,     // auto-ack
-		false,     // exclusive
-		false,     // no local
-		false,     // no wait
-		nil,       // arguments
+	log.Println("Processing queue for", queue.Name)
+	messages, err := queue.Channel.Consume(
+		queue.Name, // queue name
+		"",         // consumer
+		false,      // auto-ack
+		false,      // exclusive
+		false,      // no local
+		false,      // no wait
+		nil,        // arguments
 	)
 	if err != nil {
-		panic(err)
+		log.Println("Error consuming for queue", queue.Name)
+		log.Fatal(err)
 	}
-
-	if err != nil {
-		panic(err)
-	}
-
 	go func() {
+		// Create these channels to help publish messages ONLY
 		for message := range messages {
-			if queueName == QUEUE_NAME_NFT {
-				mailerChannel, err := connection.Channel()
-				defer mailerChannel.Close()
-				if err != nil {
-					log.Fatal("Error creating a channel")
-				}
-				mailerChannel.QueueDeclare(
-					QUEUE_NAME_MAILER,
-					true,  // durable
-					false, // auto delete
-					false, // exclusive
-					false, // no wait
-					nil,   // arguments
-				)
-				nftMintHander := nft.NewNftMintHandler(mailerChannel, db)
+			if queue.Name == QUEUE_NAME_NFT {
+				nftMintHander := nft.NewNftMintHandler(h.ApiQueue, h.MailerQueue, h.Db)
 				log.Printf("Handling NFT Message from := %s", message.Timestamp)
 				nftMintHander.HandleMessages(&message)
 			}
-			if queueName == QUEUE_NAME_MAILER {
+			if queue.Name == QUEUE_NAME_MAILER {
 				log.Printf("Handling Mailer Message from := %s", message.Timestamp)
-				mailer.HandleMessages(&message, db)
+				mailHandler := mailer.NewMailHadler(h.ApiQueue, h.Db)
+				mailHandler.HandleMessages(&message)
 			}
-			if queueName == QUEUE_NAME_GIF {
-				nftChannel, err := connection.Channel()
-				defer nftChannel.Close()
-				if err != nil {
-					log.Fatal("Error creating a channel")
-				}
-				nftChannel.QueueDeclare(
-					QUEUE_NAME_NFT,
-					true,  // durable
-					false, // auto delete
-					false, // exclusive
-					false, // no wait
-					nil,   // arguments
-				)
-				gifHandler := gif.NewCreateGifHandler(nftChannel, db)
+			if queue.Name == QUEUE_NAME_GIF {
+				gifHandler := gif.NewCreateGifHandler(h.ApiQueue, h.NFTQueue, h.Db)
 				log.Printf("Handling GIf Message from := %s", message.Timestamp)
 				gifHandler.HandleMessages(&message)
 			}
 		}
+		log.Println("Closing queue handler", queue.Name)
 	}()
 }

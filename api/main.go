@@ -45,11 +45,13 @@ func main() {
 	db := database.Connect()
 
 	app := app.New(&mq, fiberApp, db)
+	mq.SetupApiMessageListener(db)
 
 	// Setup the controller to have all app properties
 	controller := controllers.Controller{
-		app,
+		App: app,
 	}
+
 	controller.SetupRoutes()
 
 	log.Fatal(fiberApp.Listen(":3000"))

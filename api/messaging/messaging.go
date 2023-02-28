@@ -2,7 +2,9 @@ package messaging
 
 import (
 	"encoding/json"
+
 	"github.com/streadway/amqp"
+	"gorm.io/gorm"
 )
 
 type Messaging struct {
@@ -12,6 +14,7 @@ type Messaging struct {
 	SchedulerQueue *Queue
 	NftQueue       *Queue
 	GifQueue       *Queue
+	ApiQueue       *Queue
 }
 
 type Queue struct {
@@ -45,17 +48,37 @@ func (m *Messaging) Setup() func() {
 	queue2, closeFunc2 := m.CreateQueue("scheduler")
 	queue3, closeFunc3 := m.CreateQueue("nft")
 	queue4, closeFunc4 := m.CreateQueue("gif")
+	queue5, closeFunc5 := m.CreateQueue("api")
 	m.MailerQueue = queue1
 	m.SchedulerQueue = queue2
 	m.NftQueue = queue3
 	m.GifQueue = queue4
+	m.ApiQueue = queue5
 
 	return func() {
 		closeFunc1()
 		closeFunc2()
 		closeFunc3()
 		closeFunc4()
+		closeFunc5()
 	}
+}
+
+func (m *Messaging) SetupApiMessageListener(db *gorm.DB) {
+	messages, err := m.ApiQueue.Channel.Consume(
+		"api",
+		"",    // consumer
+		false, // auto-ack
+		false, // exclusive
+		false, // no local
+		false, // no wait
+		nil,   // arguments
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	HandleApiMessages(messages, db)
 }
 
 // CreateQueue method  

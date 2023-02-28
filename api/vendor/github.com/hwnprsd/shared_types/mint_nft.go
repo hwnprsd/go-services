@@ -11,11 +11,9 @@ type MintPoapMessage struct {
 	EmailTemplateId uint
 }
 
-func NewMintPoapMessage(email, walletAddress, name, tokenUri string, emailTemplateId uint) *MintPoapMessage {
+func NewMintPoapMessage(taskId uint, email, walletAddress, name, tokenUri string, emailTemplateId uint) *MintPoapMessage {
 	return &MintPoapMessage{
-		MessagingBase: MessagingBase{
-			WorkType: WORK_TYPE_MINT_POAP,
-		},
+		MessagingBase:   *NewMessagingBase(taskId, WORK_TYPE_MINT_POAP),
 		Name:            name,
 		Email:           email,
 		Address:         walletAddress,
@@ -33,13 +31,11 @@ type MintQuizNFTMessage struct {
 	Email    string
 }
 
-func NewMintQuizNFTMessage(email string, walletAddress string, tokenUri string) *MintQuizNFTMessage {
+func NewMintQuizNFTMessage(taskId uint, email string, walletAddress string, tokenUri string) *MintQuizNFTMessage {
 	return &MintQuizNFTMessage{
-		MessagingBase: MessagingBase{
-			WorkType: WORK_TYPE_MINT_QUIZ_NFT,
-		},
-		Email:    email,
-		Address:  walletAddress,
-		TokenURI: tokenUri,
+		MessagingBase: *NewMessagingBase(taskId, WORK_TYPE_MINT_QUIZ_NFT),
+		Email:         email,
+		Address:       walletAddress,
+		TokenURI:      tokenUri,
 	}
 }

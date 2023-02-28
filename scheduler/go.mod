@@ -2,9 +2,10 @@ module flaq.club/scheduler
 
 go 1.19
 
-require(
-	github.com/hibiken/asynq v0.24.0 // direct 
-	github.com/streadway/amqp v1.0.0 // direct 
+require (
+	github.com/hibiken/asynq v0.24.0 // direct
+	github.com/hwnprsd/shared_types v0.0.0-20230227060730-b1855b6e7e66 // direct
+	github.com/streadway/amqp v1.0.0 // direct
 )
 
 require (

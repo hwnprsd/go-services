@@ -7,7 +7,7 @@ require (
 	github.com/ericpauley/go-quantize v0.0.0-20200331213906-ae555eb2afa4
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/fogleman/gg v1.3.0
-	github.com/hwnprsd/shared_types v0.0.0-20230223171628-cc686ee5b936
+	github.com/hwnprsd/shared_types v0.0.0-20230227060730-b1855b6e7e66
 	github.com/lib/pq v1.10.7
 	github.com/streadway/amqp v1.0.0
 	gorm.io/driver/postgres v1.4.6

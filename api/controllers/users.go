@@ -5,8 +5,21 @@ import (
 
 	"flaq.club/api/models"
 	"flaq.club/api/utils"
+	"github.com/gofiber/fiber/v2"
 	"github.com/hwnprsd/shared_types"
 )
+
+func (c *Controller) SetupUserRoutes() {
+	group := c.FiberApp.Group("users")
+	group.Post("/create", func(ct *fiber.Ctx) error {
+		body := new(CreateUserBody)
+		return utils.PostRequestHandler(ct, c.CreateUser(), utils.RequestBody{Data: body})
+	})
+
+	group.Get("/", func(ctx *fiber.Ctx) error {
+		return utils.GetRequestHandler(ctx, c.GetUsers(), utils.RequestBody{})
+	})
+}
 
 type CreateUserBody struct {
 	Email string `json:"email,omitempty" validate:"required,email,min=6,max=32"`
@@ -34,6 +47,7 @@ func (ctrl *Controller) CreateUser() utils.PostHandler {
 		}
 
 		ctrl.MQ.MailerQueue.PublishMessage(shared_types.NewSendMailMessage(
+			0,
 			"ashwin@solace.money",
 			"Claim sthe NFT you jusat earned! Again 2 - ! 3x",
 			1,

@@ -4,8 +4,6 @@ const (
 	WORK_TYPE_CREATE_GIF = "CREATE_GIF"
 )
 
-// 	// Inputs
-
 type CreateGifMessage struct {
 	MessagingBase
 	EventID           uint
@@ -15,11 +13,9 @@ type CreateGifMessage struct {
 	EmailTemplateId   uint
 }
 
-func NewCreateGifMessage(eventId, emailTemplateId uint, userName, userWalletAddress, userEmail string) *CreateGifMessage {
+func NewCreateGifMessage(taskId, eventId, emailTemplateId uint, userName, userWalletAddress, userEmail string) *CreateGifMessage {
 	return &CreateGifMessage{
-		MessagingBase: MessagingBase{
-			WorkType: WORK_TYPE_CREATE_GIF,
-		},
+		MessagingBase:     *NewMessagingBase(taskId, WORK_TYPE_CREATE_GIF),
 		EventID:           eventId,
 		EmailTemplateId:   emailTemplateId,
 		UserName:          userName,
