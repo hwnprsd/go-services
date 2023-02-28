@@ -9,13 +9,6 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func createAsynqTask(channel string, message string) *asynq.Task {
-	payload, _ := json.Marshal(map[string]string{
-		"Inside SCHEDULER": message,
-	})
-	return asynq.NewTask(channel, payload)
-}
-
 // HandleIncomingMessages method  
 // Listen to messages from the RabbitMQ
 func (t *TaskHandler) HandleMqMessages(channel *amqp.Channel) {
@@ -58,6 +51,7 @@ func (t *TaskHandler) HandleMqMessages(channel *amqp.Channel) {
 				taskData, _ := json.Marshal(message)
 				task := asynq.NewTask(TASK_TYPE_EMAIL_LIST, taskData)
 				log.Println(message.ScheduledTime.String())
+				log.Println("CampaignID:", message.CampaignId)
 				info, err := t.TaskProducer.Enqueue(task, asynq.ProcessAt(message.ScheduledTime))
 				if err != nil {
 					log.Println("Error enqueuing task", err)

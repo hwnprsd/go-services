@@ -37,6 +37,12 @@ func (h *MailHandler) HandleMessages(payload *amqp.Delivery) {
 		message := shared_types.SendMailMessage{}
 		json.Unmarshal(payload.Body, &message)
 		h.SendSingleEmail(message)
+		break
+	case shared_types.WORK_TYPE_SCHEDULE_EMAIL:
+		message := shared_types.ScheduleEmailsMessage{}
+		json.Unmarshal(payload.Body, &message)
+		h.SendEmailToList(message)
+		break
 	}
 	payload.Ack(false)
 }

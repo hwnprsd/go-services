@@ -25,7 +25,7 @@ github.com/gofiber/fiber/v2/utils
 # github.com/google/uuid v1.3.0
 ## explicit
 github.com/google/uuid
-# github.com/hwnprsd/shared_types v0.0.0-20230227060730-b1855b6e7e66
+# github.com/hwnprsd/shared_types v0.0.0-20230228074232-5418bea70866
 ## explicit; go 1.19
 github.com/hwnprsd/shared_types
 github.com/hwnprsd/shared_types/status

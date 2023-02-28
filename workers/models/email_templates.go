@@ -14,4 +14,5 @@ type EmailTemplate struct {
 	DeletedAt        gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 	TemplateString   string         `json:"template_string,omitempty"`
 	ValueArrangement pq.StringArray `json:"value_arrangement" gorm:"type:text[]"`
+	Subject          string         `json:"subject"`
 }

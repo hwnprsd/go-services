@@ -7,7 +7,7 @@ require (
 	github.com/ericpauley/go-quantize v0.0.0-20200331213906-ae555eb2afa4
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/fogleman/gg v1.3.0
-	github.com/hwnprsd/shared_types v0.0.0-20230227060730-b1855b6e7e66
+	github.com/hwnprsd/shared_types v0.0.0-20230228074232-5418bea70866
 	github.com/lib/pq v1.10.7
 	github.com/streadway/amqp v1.0.0
 	gorm.io/driver/postgres v1.4.6
@@ -20,6 +20,7 @@ require (
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/go-ole/go-ole v1.2.1 // indirect
+	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/google/uuid v1.2.0 // indirect
@@ -39,4 +40,6 @@ require (
 	golang.org/x/sys v0.4.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
+	gorm.io/datatypes v1.1.0 // indirect
+	gorm.io/driver/mysql v1.4.4 // indirect
 )

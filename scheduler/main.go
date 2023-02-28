@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 
 	"flaq.club/scheduler/utils"
 	"github.com/hibiken/asynq"
+	"github.com/hwnprsd/shared_types"
 	"github.com/streadway/amqp"
 )
 
@@ -44,7 +46,14 @@ type TaskHandler struct {
 func (th *TaskHandler) handleEmailListTask(ctx context.Context, t *asynq.Task) error {
 	log.SetPrefix("EMAIL_LIST_HANDLER:")
 	log.Println("Handling Email Task")
-	log.Println(t.Payload())
+	data := shared_types.ScheduleEmailsMessage{}
+	err := json.Unmarshal(t.Payload(), &data)
+	if err != nil {
+		log.Printf("Error unmarshalling task payload. Check the task type")
+		return err
+	}
+	log.Println("Campaign ID", data.CampaignId)
+	th.MailerQueue.PublishMessage(data)
 	return nil
 }
 

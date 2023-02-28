@@ -54,10 +54,16 @@ type ScheduleEmailBody struct {
 func (ctrl *Controller) ScheduleEmail() utils.PostHandler {
 	return func(data utils.RequestBody) (interface{}, error) {
 		scheduleTime := time.Now().Add(time.Minute * time.Duration(1))
+		// scheduleTime := time.Now()
 		log.Println(time.Now().String())
 		log.Println(scheduleTime.String())
-		message := shared_types.NewScheduleEmailMessage(0, 1, "test", scheduleTime, map[string]string{"test": "true"})
+		message := shared_types.NewScheduleEmailMessage(0, 1, scheduleTime, map[string]string{"test": "true"})
 		error := ctrl.MQ.SchedulerQueue.PublishMessage(message)
+		message = shared_types.NewScheduleEmailMessage(0, 2, scheduleTime, map[string]string{"test": "true"})
+		error = ctrl.MQ.SchedulerQueue.PublishMessage(message)
+		message = shared_types.NewScheduleEmailMessage(0, 3, scheduleTime, map[string]string{"test": "true"})
+		error = ctrl.MQ.SchedulerQueue.PublishMessage(message)
+
 		if error != nil {
 			log.Fatal(error)
 		}

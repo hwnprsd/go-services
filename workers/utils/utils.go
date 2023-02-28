@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"log"
+	"os"
 
 	"github.com/streadway/amqp"
 )
@@ -57,4 +58,12 @@ func CreateQueue(conn amqp.Connection, queueName string) (*Queue, func()) {
 		}, func() {
 			channel.Close()
 		}
+}
+
+func GetMailerEnv() (smtpHost, smtpUsername, smtpPassword, smtpPort string) {
+	smtpHost = os.Getenv("SMTP_HOST")
+	smtpPassword = os.Getenv("SMTP_PASSWORD")
+	smtpPort = os.Getenv("SMTP_PORT")
+	smtpUsername = os.Getenv("SMTP_USER")
+	return
 }

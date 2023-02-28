@@ -48,6 +48,8 @@ github.com/hibiken/asynq v0.24.0/go.mod h1:FVnRfUTm6gcoDkM/EjF4OIh5/06ergCPUO6pS
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/hwnprsd/shared_types v0.0.0-20230227060730-b1855b6e7e66 h1:nYD2SDDpSJFV8dXlF+oLCU9Wq8ZVzvjj298L7OIdZ1c=
 github.com/hwnprsd/shared_types v0.0.0-20230227060730-b1855b6e7e66/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
+github.com/hwnprsd/shared_types v0.0.0-20230228074232-5418bea70866 h1:uBZvU7MxMySqCX8iQ/VOqNB9IddJIu4IPspANhfOlgg=
+github.com/hwnprsd/shared_types v0.0.0-20230228074232-5418bea70866/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=
 github.com/kr/pretty v0.3.0 h1:WgNl7dwNpEZ6jJ9k1snq4pZsg7DOEN8hP9Xw0Tsjwk0=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=

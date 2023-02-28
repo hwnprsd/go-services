@@ -11,6 +11,7 @@ const (
 	WORK_TYPE_CAMPAIGN_SUCCESS    = "MAILER_CAMPAIGN_SUCCESS"
 
 	WORK_TYPE_SCHEDULE_EMAIL = "SCHEDULE_EMAIL"
+	WORK_TYPE_SEND_MAIL_LIST = "SEND_MAIL_LIST"
 )
 
 type SendMailMessage struct {
@@ -33,20 +34,23 @@ func NewSendMailMessage(taskId uint, email string, subject string, templateId ui
 
 type ScheduleEmailsMessage struct {
 	MessagingBase
-	ListName        string
-	ScheduledTime   time.Time
-	EmailTemplateId uint
-	TemplateValues  map[string]string
+	CampaignId     uint
+	ScheduledTime  time.Time
+	TemplateValues map[string]string
 }
 
-func NewScheduleEmailMessage(taskId, emailTemplateId uint, listName string, scheduledTime time.Time, templateValues map[string]string) *ScheduleEmailsMessage {
+func NewScheduleEmailMessage(taskId, campaignId uint, scheduledTime time.Time, templateValues map[string]string) *ScheduleEmailsMessage {
 	return &ScheduleEmailsMessage{
 		*NewMessagingBase(taskId, WORK_TYPE_SCHEDULE_EMAIL),
-		listName,
+		campaignId,
 		scheduledTime,
-		emailTemplateId,
 		templateValues,
 	}
+}
+
+type SendEmailListMessage struct {
+	MessagingBase
+	ListName string
 }
 
 type AddUserListMessage struct {
