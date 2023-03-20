@@ -98,5 +98,7 @@ func (h *WorkHandler) ProcessQueue(queue *utils.Queue) {
 			}
 		}
 		log.Println("Closing queue handler", queue.Name)
+		log.Println("Restarting queue")
+		h.ProcessQueue(queue)
 	}()
 }

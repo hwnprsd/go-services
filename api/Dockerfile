@@ -16,6 +16,7 @@ FROM gcr.io/distroless/base-debian10
 WORKDIR /
 
 COPY --from=build /exe /exe
+COPY --from=build /src/views/docs.html ./views/
 
 USER nonroot:nonroot
 

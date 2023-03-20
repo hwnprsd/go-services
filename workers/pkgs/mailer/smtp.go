@@ -3,12 +3,13 @@ package mailer
 import (
 	"encoding/json"
 	"log"
-	"net/smtp"
+	"strconv"
 	"strings"
 	"sync"
 
 	"flaq.club/workers/models"
 	"flaq.club/workers/utils"
+	"github.com/go-mail/mail"
 	"github.com/hwnprsd/shared_types"
 	"github.com/hwnprsd/shared_types/status"
 	"gorm.io/datatypes"
@@ -22,15 +23,16 @@ func (h *MailHandler) SendSingleEmail(message shared_types.SendMailMessage) {
 	h.ApiQueue.PublishMessage(startMessage)
 
 	emailTemplate := models.EmailTemplate{}
-	emailMessage := emailTemplate.TemplateString
 	result := h.Db.Model(&emailTemplate).Where("id = ?", message.BodyTemplateID).First(&emailTemplate)
 	if result.Error != nil {
 		log.Println("Error occoured fetching email template")
 		log.Println(result.Error)
 		return
 	}
-
-	err := h.sendMail(emailMessage, message.EmailAddress, emailTemplate.Subject, message.TemplateValues, &sync.WaitGroup{})
+	emailMessage := emailTemplate.TemplateString
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	err := h.sendMail(emailMessage, message.EmailAddress, emailTemplate.Subject, message.TemplateValues, wg)
 	if err != nil {
 		log.Println("Error sending email")
 	}
@@ -121,30 +123,31 @@ func (h *MailHandler) SendEmailToList(message shared_types.ScheduleEmailsMessage
 }
 
 func (h *MailHandler) sendMail(emailMessage, emailAddress, subject string, templateValues map[string]string, wg *sync.WaitGroup) error {
-	defer wg.Done()
-	log.Println("Sending email to ", emailAddress)
 	smtpHost, smtpUsername, smtpPassword, smtpPort := utils.GetMailerEnv()
-	auth := smtp.PlainAuth("", smtpUsername, smtpPassword, smtpHost)
+	defer wg.Done()
+	m := mail.NewMessage()
+	m.SetHeader("From", "Flaq<welcome@flaq.club>")
+	m.SetHeader("To", emailAddress)
+	m.SetHeader("Subject", subject)
+
 	for key, value := range templateValues {
 		emailMessage = strings.ReplaceAll(emailMessage, "{{ "+key+" }}", value)
 	}
 
-	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\r\n"
+	m.SetBody("text/html", emailMessage)
 
-	emailBody :=
-		"To: " + emailAddress + "\r\n" +
-			"From: Flaq<welcome@flaq.club>\r\n" +
-			"Subject: " + subject + "\r\n" +
-			mime +
-			"\r\n" +
-			emailMessage
-
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, "welcome@flaq.club", []string{emailAddress}, []byte(emailBody))
-
+	port, err := strconv.Atoi(smtpPort)
 	if err != nil {
-		log.Println("Error occoured sending email")
-		log.Println("SMTP HOST", smtpHost)
+		log.Println("Error converting port to int inside mailer")
 		return err
 	}
+
+	d := mail.NewDialer(smtpHost, port, smtpUsername, smtpPassword)
+	if err := d.DialAndSend(m); err != nil {
+		log.Println("Error occured sending email")
+		log.Println(err)
+		return err
+	}
+
 	return nil
 }

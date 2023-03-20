@@ -7,6 +7,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/template/html"
+	fiberw "github.com/hwnprsd/go-easy-docs/fiber-wrapper"
 )
 
 type Controller struct {
@@ -14,7 +16,10 @@ type Controller struct {
 }
 
 func New() *fiber.App {
-	fiberApp := fiber.New()
+	engine := html.New("./views", ".html")
+	fiberApp := fiber.New(fiber.Config{
+		Views: engine,
+	})
 	fiberApp.Use(logger.New())
 	fiberApp.Use(cors.New(cors.Config{
 		AllowOrigins: "*", // Update this
@@ -39,4 +44,11 @@ func (c *Controller) SetupRoutes() {
 	c.SetupQuizRoutes()
 	c.SetupUserRoutes()
 	c.SetupTaskRoutes()
+
+	c.FiberApp.Get("/api/docs", func(ctx *fiber.Ctx) error {
+		ctx.Set(fiber.HeaderContentType, fiber.MIMETextHTML)
+
+		fiberw.WriteApiDocumentation("Flaq Academy API Service", "Flaq helps provide web3 education with EASE", ctx.Response().BodyWriter())
+		return nil
+	})
 }

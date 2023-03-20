@@ -9,13 +9,16 @@ build:
 	docker context use default
 	docker compose build
 	docker compose push
+	echo "DONE"
 
 deploy:
 	docker context use opl 
 	docker compose up
+	echo "DONE"
 
 run:
 	$(MAKE) -C ./api modsync
 	docker-compose -f docker-compose.dev.yml --env-file .dev.env up --build --remove-orphans --force-recreate
+	echo "DONE"
 	
 

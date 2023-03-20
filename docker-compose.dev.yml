@@ -1,46 +1,23 @@
 version: "3.8"
 
 services:
-  db:
-    image: postgres:15.1-alpine
-    restart: always
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - "5432:5432"
-    networks:
-      - flaq_net
-
-  cache:
-    image: redis:6.2-alpine
-    restart: always
-    ports:
-      - 6379:6379
-    command: redis-server --save 20 1 --loglevel warning
-    networks:
-      - flaq_net
-
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: "rabbitmq"
-    ports:
-      - 5672:5672
-      - 15672:15672
-    volumes:
-      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
-      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
-    logging:
-      driver: none
-    networks:
-      - flaq_net
+  # db:
+  #   image: postgres:15.1-alpine
+  #   restart: always
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #   ports:
+  #     - "5432:5432"
+  #   networks:
+  #     - flaq_net
 
   workers:
     container_name: "flaq-workers"
     build:
       context: ./workers
     environment:
-      AMQP_SERVER_URL: amqp://rabbitmq:5672
+      AMQP_SERVER_URL: amqp://host.docker.internal:5672
       ETH_RPC_URL: ${ETH_RPC_URL}
       CONTRACT_ADDRESS_QUIZ: ${CONTRACT_ADDRESS_QUIZ}
       CONTRACT_ADDRESS: ${CONTRACT_ADDRESS}
@@ -57,12 +34,10 @@ services:
       AWS_SECRET_KEY: ${AWS_SECRET_KEY}
     restart: always
     networks:
-      - flaq_net
+      - default
     env_file:
       - .dev.env
     depends_on:
-      - rabbitmq
-      - cache
       - api
 
   api:
@@ -71,7 +46,7 @@ services:
       context: ./api
       dockerfile: dev.Dockerfile
     environment:
-      AMQP_SERVER_URL: amqp://rabbitmq:5672
+      AMQP_SERVER_URL: amqp://host.docker.internal:5672
       PG_HOST: db
       PG_USERNAME: postgres
       PG_PASSWORD: postgres
@@ -83,29 +58,26 @@ services:
     volumes:
       - ./api:/app
     networks:
-      - flaq_net
-    depends_on:
-      - rabbitmq
-      - db
+      - default
 
   scheduler:
     container_name: "scheduler"
     build:
       context: ./scheduler
     environment:
-      AMQP_SERVER_URL: amqp://rabbitmq:5672
-      REDIS_URL: "cache:6379"
+      AMQP_SERVER_URL: amqp://host.docker.internal:5672
+      REDIS_URL: "host.docker.internal:6379"
     restart: always
     networks:
-      - flaq_net
+      - default
     depends_on:
-      - rabbitmq
-      - cache
       - api
 
 networks:
-  flaq_net:
-    driver: bridge
+  default:
+    name: flaq_net
+    external: true
+    # driver: bridge
 # vpc-0ddb1d66
 #
 #  subnet-5f816e34
