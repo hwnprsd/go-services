@@ -1,9 +1,14 @@
 package controllers
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"os"
 	"time"
 
 	"flaq.club/api/models"
@@ -22,6 +27,7 @@ func (c *Controller) SetupTaskRoutes() {
 	})
 
 	fiberw.Post(group, "/schedule/email", c.ScheduleEmail)
+	fiberw.Post(group, "/schedule/scrape", c.ScrapeUrl)
 }
 
 type GetTaskDetailsQuery struct {
@@ -60,4 +66,41 @@ func (ctrl *Controller) ScheduleEmail(body ScheduleEmailBody) (*string, error) {
 
 	response := fmt.Sprintf("task scheduled for job ID %d", body.CampaignId)
 	return &response, nil
+}
+
+type ScrapeUrlBody struct {
+	Url string `json:"url"`
+}
+
+func (ctrl *Controller) ScrapeUrl(data ScrapeUrlBody) (*string, error) {
+	SCRAPER_TOKEN := os.Getenv("SCRAPER_TOKEN")
+	scraperUrl := ("https://wln0664peg.execute-api.ap-south-1.amazonaws.com/default/jsScraper3")
+	body, _ := json.Marshal(utils.Map{
+		"url": data.Url,
+	})
+	req, err := http.NewRequest("POST", scraperUrl, bytes.NewBuffer(body))
+	if err != nil {
+		log.Fatal("Error creating request")
+	}
+	req.Header.Set("x-api-key", SCRAPER_TOKEN)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		log.Fatal("Error creating request")
+	}
+	bodyBytes, err := io.ReadAll(res.Body)
+	defer res.Body.Close()
+
+	type ScraperResponse struct {
+		TextContent string `json:"textContent"`
+	}
+	responseBody := ScraperResponse{}
+	json.Unmarshal(bodyBytes, &responseBody)
+
+	message := shared_types.NewSummarizeBlogMessage(899, responseBody.TextContent)
+	ctrl.MQ.GPTQueue.PublishMessage(message)
+	resp := "Scraping URL"
+	return &resp, nil
 }

@@ -32,11 +32,24 @@ services:
       PG_PORT: 5432
       AWS_ACCOUNT_ID: ${AWS_ACCOUNT_ID}
       AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+      CHROME_DP_URL: "http://host.docker.internal:9222"
     restart: always
     networks:
       - default
     env_file:
       - .dev.env
+    depends_on:
+      - api
+
+  gptx:
+    build:
+      context: ./gpt
+    restart: always
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      AMQP_SERVER_URL: "amqp://host.docker.internal:5672"
+    networks:
+      - default
     depends_on:
       - api
 
@@ -52,6 +65,7 @@ services:
       PG_PASSWORD: postgres
       PG_PORT: 5432
       POAP_MINT_SECRET: testmint
+      SCRAPER_TOKEN: ${SCRAPER_TOKEN}
     restart: always
     ports:
       - 3000:3000

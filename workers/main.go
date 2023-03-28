@@ -8,6 +8,7 @@ import (
 	"flaq.club/workers/pkgs/gif"
 	"flaq.club/workers/pkgs/mailer"
 	"flaq.club/workers/pkgs/nft"
+	"flaq.club/workers/pkgs/scraper"
 	"flaq.club/workers/utils"
 	"github.com/streadway/amqp"
 	"gorm.io/gorm"
@@ -17,6 +18,7 @@ const QUEUE_NAME_MAILER = "mailer"
 const QUEUE_NAME_NFT = "nft"
 const QUEUE_NAME_GIF = "gif"
 const QUEUE_NAME_API = "api"
+const QUEUE_NAME_SCRAPER = "scraper"
 
 // main function  
 func main() {
@@ -33,33 +35,38 @@ func main() {
 	nftQueue, cancelFunc2 := utils.CreateQueue(*connectRabbitMq, QUEUE_NAME_NFT)
 	gifQueue, cancelFunc3 := utils.CreateQueue(*connectRabbitMq, QUEUE_NAME_GIF)
 	mailerQueue, cancelFunc4 := utils.CreateQueue(*connectRabbitMq, QUEUE_NAME_MAILER)
+	scraperQueue, cancelFunc5 := utils.CreateQueue(*connectRabbitMq, QUEUE_NAME_SCRAPER)
 	defer func() {
 		cancelFunc1()
 		cancelFunc2()
 		cancelFunc3()
 		cancelFunc4()
+		cancelFunc5()
 		log.Println("Cancelling all functions")
 	}()
 
 	handler := WorkHandler{
-		ApiQueue:    apiQueue,
-		NFTQueue:    nftQueue,
-		MailerQueue: mailerQueue,
-		GifQueue:    gifQueue,
-		Db:          db,
+		ApiQueue:     apiQueue,
+		NFTQueue:     nftQueue,
+		MailerQueue:  mailerQueue,
+		GifQueue:     gifQueue,
+		ScraperQueue: scraperQueue,
+		Db:           db,
 	}
 	go handler.ProcessQueue(handler.GifQueue)
 	go handler.ProcessQueue(handler.NFTQueue)
 	go handler.ProcessQueue(handler.MailerQueue)
+	go handler.ProcessQueue(handler.ScraperQueue)
 	<-forever
 }
 
 type WorkHandler struct {
-	ApiQueue    *utils.Queue
-	NFTQueue    *utils.Queue
-	MailerQueue *utils.Queue
-	GifQueue    *utils.Queue
-	Db          *gorm.DB
+	ApiQueue     *utils.Queue
+	NFTQueue     *utils.Queue
+	MailerQueue  *utils.Queue
+	GifQueue     *utils.Queue
+	ScraperQueue *utils.Queue
+	Db           *gorm.DB
 }
 
 func (h *WorkHandler) ProcessQueue(queue *utils.Queue) {
@@ -95,6 +102,11 @@ func (h *WorkHandler) ProcessQueue(queue *utils.Queue) {
 				gifHandler := gif.NewCreateGifHandler(h.ApiQueue, h.NFTQueue, h.Db)
 				log.Printf("Handling GIf Message from := %s", message.Timestamp)
 				gifHandler.HandleMessages(&message)
+			}
+			if queue.Name == QUEUE_NAME_SCRAPER {
+				scraperHandler := scraper.NewScraperHandler(h.ApiQueue)
+				log.Printf("Handling Scraper Message from := %s", message.Timestamp)
+				scraperHandler.HandleMessages(&message)
 			}
 		}
 		log.Println("Closing queue handler", queue.Name)

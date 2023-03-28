@@ -28,7 +28,7 @@ github.com/google/uuid
 # github.com/hwnprsd/go-easy-docs v0.0.0-20230306100150-a75bec280558
 ## explicit; go 1.19
 github.com/hwnprsd/go-easy-docs/fiber-wrapper
-# github.com/hwnprsd/shared_types v0.0.0-20230228074232-5418bea70866
+# github.com/hwnprsd/shared_types v0.0.0-20230328094554-11ca950c35bf
 ## explicit; go 1.19
 github.com/hwnprsd/shared_types
 github.com/hwnprsd/shared_types/status

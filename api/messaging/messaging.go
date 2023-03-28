@@ -15,6 +15,8 @@ type Messaging struct {
 	NftQueue       *Queue
 	GifQueue       *Queue
 	ApiQueue       *Queue
+	ScraperQueue   *Queue
+	GPTQueue       *Queue
 }
 
 type Queue struct {
@@ -49,11 +51,15 @@ func (m *Messaging) Setup() func() {
 	queue3, closeFunc3 := m.CreateQueue("nft")
 	queue4, closeFunc4 := m.CreateQueue("gif")
 	queue5, closeFunc5 := m.CreateQueue("api")
+	queue6, closeFunc6 := m.CreateQueue("scraper")
+	queue7, closeFunc7 := m.CreateQueue("gptx")
 	m.MailerQueue = queue1
 	m.SchedulerQueue = queue2
 	m.NftQueue = queue3
 	m.GifQueue = queue4
 	m.ApiQueue = queue5
+	m.ScraperQueue = queue6
+	m.GPTQueue = queue7
 
 	return func() {
 		closeFunc1()
@@ -61,6 +67,8 @@ func (m *Messaging) Setup() func() {
 		closeFunc3()
 		closeFunc4()
 		closeFunc5()
+		closeFunc6()
+		closeFunc7()
 	}
 }
 
