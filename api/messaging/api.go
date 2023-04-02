@@ -2,6 +2,7 @@ package messaging
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"flaq.club/api/models"
@@ -22,9 +23,10 @@ func HandleApiMessages(messages <-chan amqp.Delivery, db *gorm.DB) {
 					message.Reject(false)
 				}
 			}()
+			fmt.Println(string(message.Body))
 			err := json.Unmarshal(message.Body, &baseMessage)
 			if err != nil {
-				log.Printf("Error parsing JSON message. Please check what the sender sent! QUEUE - %s", message.Body)
+				log.Printf("Error parsing JSON message. Please check what the sender sent! QUEUE - %s\n", "_")
 				message.Reject(false)
 				return
 			}
@@ -36,8 +38,9 @@ func HandleApiMessages(messages <-chan amqp.Delivery, db *gorm.DB) {
 				task := models.Task{}
 				log.Println("Task ID", apiCallbackMessage.TaskID)
 				log.Println("Status", apiCallbackMessage.Status)
-				res := db.Model(&task).Where("id = ?", apiCallbackMessage.TaskID).Update("status", apiCallbackMessage.Status)
-				// TODO Update ID as well
+				log.Println("Data", apiCallbackMessage.Data)
+				res := db.Model(&task).Where("id = ?", apiCallbackMessage.TaskID).Updates(map[string]string{"status": apiCallbackMessage.Status, "data": apiCallbackMessage.Data.(string)})
+				// // TODO Update ID as well
 				if res.Error != nil {
 					log.Println("Invalid Task ID")
 					log.Println(res.Error)

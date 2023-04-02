@@ -13,7 +13,35 @@ import (
 	"github.com/hwnprsd/shared_types"
 	"github.com/hwnprsd/shared_types/status"
 	"gorm.io/datatypes"
+	"gorm.io/gorm/clause"
 )
+
+func (h *MailHandler) AddUserToList(message shared_types.AddUserListMessage) {
+	mailingList := models.MailingList{}
+	if res := h.Db.Where("list_name = ?", message.ListName).First(&mailingList); res.Error != nil {
+		log.Println("Error finding list with name", message.ListName)
+		return
+	}
+	user := models.MailingUser{}
+	log.Println("Trying to add -", message.EmailAddress)
+	count := int64(0)
+	res := h.Db.Model(&user).Where("email_address = ?", message.EmailAddress).Count(&count)
+	if res.Error != nil {
+		log.Println("Error Fetching User Count - Email =", message.EmailAddress, res.Error)
+		return
+	}
+	if count == 0 {
+		// Create user
+		user.EmailAddress = message.EmailAddress
+		user.Name = message.Name
+		h.Db.Clauses(clause.Returning{}).Create(&user)
+	}
+	if err := h.Db.Model(&user).Association("Lists").Append(&mailingList); err != nil {
+		log.Println("Error adding user to a list")
+		return
+	}
+
+}
 
 func (h *MailHandler) SendSingleEmail(message shared_types.SendMailMessage) {
 	log.SetPrefix("MAIL_HANDLER: ")
@@ -34,7 +62,7 @@ func (h *MailHandler) SendSingleEmail(message shared_types.SendMailMessage) {
 	wg.Add(1)
 	err := h.sendMail(emailMessage, message.EmailAddress, emailTemplate.Subject, message.TemplateValues, wg)
 	if err != nil {
-		log.Println("Error sending email")
+		log.Println("Error sending email - ", err)
 	}
 
 	endMessage := shared_types.NewApiCallbackMessage(message.TaskId, status.POAP_MAILER_COMPLETE, "")

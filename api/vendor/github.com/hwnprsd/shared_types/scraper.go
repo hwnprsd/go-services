@@ -1,7 +1,7 @@
 package shared_types
 
 const WORK_TYPE_SCRAPE_URL = "SCRAPE_URL"
-const WORK_TYPE_SUMMARIZE_BLOG = "SCRAPE_URL"
+const WORK_TYPE_SUMMARIZE_BLOG = "SUMMARIZE_BLOG"
 
 type ScrapeUrlMessage struct {
 	MessagingBase

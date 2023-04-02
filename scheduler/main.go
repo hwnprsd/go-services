@@ -139,7 +139,7 @@ func main() {
 	// mux.Handle(tasks.TypeImageResize, tasks.NewImageProcessor())
 	// ...register other handlers...
 
-	log.Printf("Running asynq server")
+	log.Printf("Running ASYNQ Scheduler Server")
 	if err := srv.Run(mux); err != nil {
 		log.Fatalf("could not run server: %v", err)
 	}

@@ -16,6 +16,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	fiberw "github.com/hwnprsd/go-easy-docs/fiber-wrapper"
 	"github.com/hwnprsd/shared_types"
+	"gorm.io/gorm/clause"
 )
 
 func (c *Controller) SetupTaskRoutes() {
@@ -24,10 +25,10 @@ func (c *Controller) SetupTaskRoutes() {
 	fiberw.GetWithExtra(group, "/", c.GetTaskDetails, func(ctx *fiber.Ctx) (string, error) {
 		taskId := ctx.Query("taskId")
 		return taskId, nil
-	})
+	}).WithQuery("taskId")
 
 	fiberw.Post(group, "/schedule/email", c.ScheduleEmail)
-	fiberw.Post(group, "/schedule/scrape", c.ScrapeUrl)
+	fiberw.Post(group, "/summarize", c.SummarizeBlog)
 }
 
 type GetTaskDetailsQuery struct {
@@ -68,11 +69,11 @@ func (ctrl *Controller) ScheduleEmail(body ScheduleEmailBody) (*string, error) {
 	return &response, nil
 }
 
-type ScrapeUrlBody struct {
+type SummarizeBlog struct {
 	Url string `json:"url"`
 }
 
-func (ctrl *Controller) ScrapeUrl(data ScrapeUrlBody) (*string, error) {
+func (ctrl *Controller) SummarizeBlog(data SummarizeBlog) (*uint, error) {
 	SCRAPER_TOKEN := os.Getenv("SCRAPER_TOKEN")
 	scraperUrl := ("https://wln0664peg.execute-api.ap-south-1.amazonaws.com/default/jsScraper3")
 	body, _ := json.Marshal(utils.Map{
@@ -93,14 +94,24 @@ func (ctrl *Controller) ScrapeUrl(data ScrapeUrlBody) (*string, error) {
 	bodyBytes, err := io.ReadAll(res.Body)
 	defer res.Body.Close()
 
+	task := models.Task{
+		Category: "BLOG_SUMMARY",
+		Status:   "STARTED",
+		UserID:   1,
+	}
+
+	if r := ctrl.DB.Clauses(clause.Returning{}).Create(&task); r.Error != nil {
+		return nil, fiberw.NewRequestError(400, "Error creating a task", r.Error)
+	}
+
 	type ScraperResponse struct {
 		TextContent string `json:"textContent"`
 	}
+
 	responseBody := ScraperResponse{}
 	json.Unmarshal(bodyBytes, &responseBody)
 
-	message := shared_types.NewSummarizeBlogMessage(899, responseBody.TextContent)
+	message := shared_types.NewSummarizeBlogMessage(task.ID, responseBody.TextContent)
 	ctrl.MQ.GPTQueue.PublishMessage(message)
-	resp := "Scraping URL"
-	return &resp, nil
+	return &task.ID, nil
 }

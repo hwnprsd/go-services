@@ -14,4 +14,5 @@ type Task struct {
 	Status    string         `json:"status"`
 	UserID    uint           `json:"user_id"`
 	User      *User          `json:"user"`
+	Data      string         `json:"data"`
 }

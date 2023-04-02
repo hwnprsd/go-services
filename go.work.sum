@@ -69,6 +69,8 @@ github.com/hashicorp/memberlist v0.1.3 h1:EmmoJme1matNzb+hMpDuR/0sbJSUisxyqBGG67
 github.com/hashicorp/serf v0.8.2 h1:YZ7UKsJv+hKjqGVUUbtE3HNj79Eln2oQ75tniF6iPt0=
 github.com/hibiken/asynq/x v0.0.0-20220131170841-349f4c50fb1d h1:Er+U+9PmnyRHRDQjSjRQ24HoWvOY7w9Pk7bUPYM3Ags=
 github.com/hpcloud/tail v1.0.0 h1:nfCOvKYfkgYP8hkirhJocXT2+zOD8yUNjXaWfTlyFKI=
+github.com/hwnprsd/go-easy-docs v0.0.0-20230306100150-a75bec280558 h1:yzlwQSVOVEKxiYO490G1qJtbhpM1n6BuGLzcLcHy0pY=
+github.com/hwnprsd/go-easy-docs v0.0.0-20230306100150-a75bec280558/go.mod h1:OAcUoEOjXQHv3+Pun1U6dNpi1MPhKOHvwKT6g0qJ5WU=
 github.com/hwnprsd/shared_types v0.0.0-20230123140900-21b5b461e436 h1:NJS/p2Tj/x85kNvU7jKgZ/LUV0MIxZwPCaDeI1Hquvs=
 github.com/hwnprsd/shared_types v0.0.0-20230123140900-21b5b461e436/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
 github.com/hwnprsd/shared_types v0.0.0-20230125083758-7b40c369f7f8 h1:hbc1ZXMwt1QiJ0gXQ8TKUtRGzudgj8LUVtqLCuk4WFc=

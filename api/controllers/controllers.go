@@ -44,6 +44,7 @@ func (c *Controller) SetupRoutes() {
 	c.SetupQuizRoutes()
 	c.SetupUserRoutes()
 	c.SetupTaskRoutes()
+	c.SetupRedirectRoutes()
 
 	c.FiberApp.Get("/api/docs", func(ctx *fiber.Ctx) error {
 		ctx.Set(fiber.HeaderContentType, fiber.MIMETextHTML)

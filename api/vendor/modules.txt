@@ -25,10 +25,10 @@ github.com/gofiber/template/utils
 # github.com/google/uuid v1.3.0
 ## explicit
 github.com/google/uuid
-# github.com/hwnprsd/go-easy-docs v0.0.0-20230306100150-a75bec280558
+# github.com/hwnprsd/go-easy-docs v0.0.0-20230402062631-e62576c0d14d
 ## explicit; go 1.19
 github.com/hwnprsd/go-easy-docs/fiber-wrapper
-# github.com/hwnprsd/shared_types v0.0.0-20230328094554-11ca950c35bf
+# github.com/hwnprsd/shared_types v0.0.0-20230401185159-5ae943c083be
 ## explicit; go 1.19
 github.com/hwnprsd/shared_types
 github.com/hwnprsd/shared_types/status

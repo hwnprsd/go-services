@@ -60,6 +60,15 @@ type AddUserListMessage struct {
 	ListName     string
 }
 
+func NewAddUserToListMessage(taskId uint, emailAddress, name, mailingListName string) *AddUserListMessage {
+	return &AddUserListMessage{
+		*NewMessagingBase(taskId, WORK_TYPE_ADD_USER_TO_LIST),
+		emailAddress,
+		name,
+		mailingListName,
+	}
+}
+
 type RemoveUserListMessage struct {
 	MessagingBase
 	EmailAddress string

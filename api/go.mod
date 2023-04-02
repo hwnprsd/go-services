@@ -9,8 +9,8 @@ require (
 	github.com/gofiber/fiber/v2 v2.42.0
 	github.com/gofiber/template v1.7.5
 	github.com/google/uuid v1.3.0
-	github.com/hwnprsd/go-easy-docs v0.0.0-20230306100150-a75bec280558
-	github.com/hwnprsd/shared_types v0.0.0-20230328094554-11ca950c35bf
+	github.com/hwnprsd/go-easy-docs v0.0.0-20230402062631-e62576c0d14d
+	github.com/hwnprsd/shared_types v0.0.0-20230401185159-5ae943c083be
 	github.com/streadway/amqp v1.0.0
 	gorm.io/driver/postgres v1.4.6
 	gorm.io/gorm v1.24.3

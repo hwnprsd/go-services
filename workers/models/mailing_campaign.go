@@ -22,4 +22,5 @@ type MailingCampaign struct {
 	ShouldIncrementMeta     bool           `json:"should_increment_meta"`
 	ShouldInitMeta          bool           `json:"should_init_meta"`
 	ShouldInjectUserDetails bool           `json:"should_inject_user_details"`
+	Ordinal                 uint           `json:"ordinal"`
 }

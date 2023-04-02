@@ -44,6 +44,7 @@ services:
       PG_PASSWORD: ${PG_PASSWORD}
       PG_PORT: ${PG_PORT}
       POAP_MINT_SECRET: ${POAP_MINT_SECRET}
+      SCRAPER_TOKEN: ${SCRAPER_TOKEN}
     restart: always
     logging:
       driver: awslogs

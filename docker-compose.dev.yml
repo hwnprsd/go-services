@@ -41,18 +41,6 @@ services:
     depends_on:
       - api
 
-  gptx:
-    build:
-      context: ./gpt
-    restart: always
-    environment:
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      AMQP_SERVER_URL: "amqp://host.docker.internal:5672"
-    networks:
-      - default
-    depends_on:
-      - api
-
   api:
     container_name: "flaq-api"
     build:

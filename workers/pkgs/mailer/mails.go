@@ -43,6 +43,11 @@ func (h *MailHandler) HandleMessages(payload *amqp.Delivery) {
 		json.Unmarshal(payload.Body, &message)
 		h.SendEmailToList(message)
 		break
+	case shared_types.WORK_TYPE_ADD_USER_TO_LIST:
+		message := shared_types.AddUserListMessage{}
+		json.Unmarshal(payload.Body, &message)
+		h.AddUserToList(message)
+		break
 	}
 	payload.Ack(false)
 }

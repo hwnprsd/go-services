@@ -244,10 +244,10 @@ github.com/hashicorp/memberlist v0.2.2/go.mod h1:MS2lj3INKhZjWNqd3N0m3J+Jxf3DAOn
 github.com/hashicorp/memberlist v0.3.0/go.mod h1:MS2lj3INKhZjWNqd3N0m3J+Jxf3DAOnAH9VT3Sh9MUE=
 github.com/hashicorp/serf v0.9.5/go.mod h1:UWDWwZeL5cuWDJdl0C6wrvrUwEqtQ4ZKBKKENpqIUyk=
 github.com/hashicorp/serf v0.9.6/go.mod h1:TXZNMjZQijwlDvp+r0b63xZ45H7JmCmgg4gpTwn9UV4=
-github.com/hwnprsd/go-easy-docs v0.0.0-20230306100150-a75bec280558 h1:yzlwQSVOVEKxiYO490G1qJtbhpM1n6BuGLzcLcHy0pY=
-github.com/hwnprsd/go-easy-docs v0.0.0-20230306100150-a75bec280558/go.mod h1:OAcUoEOjXQHv3+Pun1U6dNpi1MPhKOHvwKT6g0qJ5WU=
-github.com/hwnprsd/shared_types v0.0.0-20230328094554-11ca950c35bf h1:Eb1LcIF1DsK38reGOG3sA329w9G4RRiuGwLRlh0J3t4=
-github.com/hwnprsd/shared_types v0.0.0-20230328094554-11ca950c35bf/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
+github.com/hwnprsd/go-easy-docs v0.0.0-20230402062631-e62576c0d14d h1:uhjb5X4qWWWlQAcqw1ChmJtgeEaHGV1yXUYzRkO9fC4=
+github.com/hwnprsd/go-easy-docs v0.0.0-20230402062631-e62576c0d14d/go.mod h1:OAcUoEOjXQHv3+Pun1U6dNpi1MPhKOHvwKT6g0qJ5WU=
+github.com/hwnprsd/shared_types v0.0.0-20230401185159-5ae943c083be h1:H6nburrsj0QjzgosGcXdTrXEvq+Y9vMr5hTU40vjXnk=
+github.com/hwnprsd/shared_types v0.0.0-20230401185159-5ae943c083be/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
 github.com/iancoleman/strcase v0.2.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47ZCWhYzw7ho=
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
