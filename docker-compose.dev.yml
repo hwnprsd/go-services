@@ -54,6 +54,10 @@ services:
       PG_PORT: 5432
       POAP_MINT_SECRET: testmint
       SCRAPER_TOKEN: ${SCRAPER_TOKEN}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GAUTH_CLIENT_KEY: ${GAUTH_CLIENT_KEY}
+      GAUTH_SECRET: ${GAUTH_SECRET}
+      GAUTH_CALLBACK_URL: ${GAUTH_CALLBACK_URL}
     restart: always
     ports:
       - 3000:3000

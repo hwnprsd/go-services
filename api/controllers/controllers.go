@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"flaq.club/api/app"
+	"github.com/MicahParks/keyfunc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -13,6 +14,7 @@ import (
 
 type Controller struct {
 	*app.App
+	jwk *keyfunc.JWKS
 }
 
 func New() *fiber.App {
@@ -40,6 +42,7 @@ func (c *Controller) SetupRoutes() {
 		return nil
 	})
 
+	c.SetupAuthRoutes()
 	c.SetupNFTRoutes()
 	c.SetupQuizRoutes()
 	c.SetupUserRoutes()

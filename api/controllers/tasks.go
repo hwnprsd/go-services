@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,7 +17,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	fiberw "github.com/hwnprsd/go-easy-docs/fiber-wrapper"
 	"github.com/hwnprsd/shared_types"
-	"gorm.io/gorm/clause"
+	openai "github.com/sashabaranov/go-openai"
 )
 
 func (c *Controller) SetupTaskRoutes() {
@@ -28,7 +29,7 @@ func (c *Controller) SetupTaskRoutes() {
 	}).WithQuery("taskId")
 
 	fiberw.Post(group, "/schedule/email", c.ScheduleEmail)
-	fiberw.Post(group, "/summarize", c.SummarizeBlog)
+	fiberw.PostWithExtra(group, "/summarize", c.SummarizeBlog, c.InjectUser)
 }
 
 type GetTaskDetailsQuery struct {
@@ -70,11 +71,14 @@ func (ctrl *Controller) ScheduleEmail(body ScheduleEmailBody) (*string, error) {
 }
 
 type SummarizeBlog struct {
-	Url string `json:"url"`
+	Url       string `json:"url"`
+	WordCount uint   `json:"word_count"`
 }
 
-func (ctrl *Controller) SummarizeBlog(data SummarizeBlog) (*uint, error) {
+func (ctrl *Controller) SummarizeBlog(data SummarizeBlog, user *models.User) (*string, error) {
+	log.Println("Dealing with user -", *user.Email)
 	SCRAPER_TOKEN := os.Getenv("SCRAPER_TOKEN")
+	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
 	scraperUrl := ("https://wln0664peg.execute-api.ap-south-1.amazonaws.com/default/jsScraper3")
 	body, _ := json.Marshal(utils.Map{
 		"url": data.Url,
@@ -94,16 +98,16 @@ func (ctrl *Controller) SummarizeBlog(data SummarizeBlog) (*uint, error) {
 	bodyBytes, err := io.ReadAll(res.Body)
 	defer res.Body.Close()
 
-	task := models.Task{
-		Category: "BLOG_SUMMARY",
-		Status:   "STARTED",
-		UserID:   1,
-	}
-
-	if r := ctrl.DB.Clauses(clause.Returning{}).Create(&task); r.Error != nil {
-		return nil, fiberw.NewRequestError(400, "Error creating a task", r.Error)
-	}
-
+	// task := models.Task{
+	// 	Category: "BLOG_SUMMARY",
+	// 	Status:   "STARTED",
+	// 	UserID:   1,
+	// }
+	//
+	// if r := ctrl.DB.Clauses(clause.Returning{}).Create(&task); r.Error != nil {
+	// 	return nil, fiberw.NewRequestError(400, "Error creating a task", r.Error)
+	// }
+	//
 	type ScraperResponse struct {
 		TextContent string `json:"textContent"`
 	}
@@ -111,7 +115,34 @@ func (ctrl *Controller) SummarizeBlog(data SummarizeBlog) (*uint, error) {
 	responseBody := ScraperResponse{}
 	json.Unmarshal(bodyBytes, &responseBody)
 
-	message := shared_types.NewSummarizeBlogMessage(task.ID, responseBody.TextContent)
-	ctrl.MQ.GPTQueue.PublishMessage(message)
-	return &task.ID, nil
+	scrapedData := responseBody.TextContent
+
+	openApiClient := openai.NewClient(OPENAI_API_KEY)
+	ctx := context.Background()
+
+	messages := make([]openai.ChatCompletionMessage, 0)
+	messages = append(messages, openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleSystem,
+		Content: fmt.Sprintf("You are a helpful assistant that summarizes a given blog webscrape data in %d words.", data.WordCount),
+	})
+	messages = append(messages, openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleUser,
+		Content: fmt.Sprintf("Summarize the following blog web-scrape data: `%s`", scrapedData),
+	})
+
+	completionRequest := openai.ChatCompletionRequest{
+		Model:    openai.GPT3Dot5Turbo0301,
+		Messages: messages,
+	}
+
+	completionResponse, err := openApiClient.CreateChatCompletion(ctx, completionRequest)
+	log.Println(completionResponse.Usage.CompletionTokens, completionResponse.Usage.TotalTokens, completionResponse.Usage.PromptTokens)
+	if err != nil {
+		log.Println("Completion error -", err)
+		return nil, fiberw.NewRequestError(400, "Error completing with OpenAI", err)
+	}
+
+	summary := completionResponse.Choices[0].Message.Content
+
+	return &summary, nil
 }
