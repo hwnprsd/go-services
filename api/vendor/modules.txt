@@ -51,7 +51,7 @@ github.com/gorilla/securecookie
 # github.com/gorilla/sessions v1.1.1
 ## explicit
 github.com/gorilla/sessions
-# github.com/hwnprsd/go-easy-docs v0.0.0-20230402062631-e62576c0d14d
+# github.com/hwnprsd/go-easy-docs v0.0.0-20230407133452-351764b1fd5f
 ## explicit; go 1.19
 github.com/hwnprsd/go-easy-docs/fiber-wrapper
 # github.com/hwnprsd/shared_types v0.0.0-20230401185159-5ae943c083be
@@ -112,9 +112,6 @@ github.com/philhofer/fwd
 # github.com/rivo/uniseg v0.4.3
 ## explicit; go 1.18
 github.com/rivo/uniseg
-# github.com/sashabaranov/go-openai v1.6.1
-## explicit; go 1.18
-github.com/sashabaranov/go-openai
 # github.com/savsgio/dictpool v0.0.0-20221023140959-7bf2e61cea94
 ## explicit; go 1.13
 github.com/savsgio/dictpool

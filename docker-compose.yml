@@ -23,6 +23,7 @@ services:
       SMTP_HOST: ${SMTP_HOST}
       AWS_ACCOUNT_ID: ${AWS_ACCOUNT_ID}
       AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
     restart: always
     logging:
       driver: awslogs

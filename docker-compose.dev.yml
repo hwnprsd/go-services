@@ -33,6 +33,7 @@ services:
       AWS_ACCOUNT_ID: ${AWS_ACCOUNT_ID}
       AWS_SECRET_KEY: ${AWS_SECRET_KEY}
       CHROME_DP_URL: "http://host.docker.internal:9222"
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
     restart: always
     networks:
       - default

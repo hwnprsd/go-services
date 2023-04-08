@@ -44,7 +44,7 @@ func (ctrl *Controller) GetOrCreateUser(data *models.User) (*models.User, error)
 		log.Println("---------------------")
 		user, err = ctrl.createUser(data)
 		if err != nil {
-			log.Println("Error creteing user with ID -", data.UniqueId)
+			log.Println("Error creating user with ID -", data.UniqueId)
 			log.Println(err)
 			log.Println("---------------------")
 			return nil, err

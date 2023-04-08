@@ -4,13 +4,15 @@ go 1.19
 
 require (
 	github.com/aws/aws-sdk-go v1.44.207
+	github.com/chromedp/chromedp v0.9.1
 	github.com/ericpauley/go-quantize v0.0.0-20200331213906-ae555eb2afa4
 	github.com/ethereum/go-ethereum v1.10.26
 	github.com/fogleman/gg v1.3.0
 	github.com/go-mail/mail v2.3.1+incompatible
 	github.com/google/uuid v1.2.0
-	github.com/hwnprsd/shared_types v0.0.0-20230324202600-4b301cd64b65
+	github.com/hwnprsd/shared_types v0.0.0-20230401185159-5ae943c083be
 	github.com/lib/pq v1.10.7
+	github.com/sashabaranov/go-openai v1.6.1
 	github.com/streadway/amqp v1.0.0
 	golang.org/x/net v0.8.0
 	gorm.io/datatypes v1.1.0
@@ -22,7 +24,6 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/chromedp/cdproto v0.0.0-20230220211738-2b1ec77315c9 // indirect
-	github.com/chromedp/chromedp v0.9.1 // indirect
 	github.com/chromedp/sysutil v1.0.0 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect

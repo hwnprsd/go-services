@@ -39,7 +39,7 @@ func HandleApiMessages(messages <-chan amqp.Delivery, db *gorm.DB) {
 				log.Println("Task ID", apiCallbackMessage.TaskID)
 				log.Println("Status", apiCallbackMessage.Status)
 				log.Println("Data", apiCallbackMessage.Data)
-				res := db.Model(&task).Where("id = ?", apiCallbackMessage.TaskID).Updates(map[string]string{"status": apiCallbackMessage.Status, "data": apiCallbackMessage.Data.(string)})
+				res := db.Model(&task).Where("id = ?", apiCallbackMessage.TaskID).Updates(map[string]interface{}{"status": apiCallbackMessage.Status, "data": apiCallbackMessage.Data})
 				// // TODO Update ID as well
 				if res.Error != nil {
 					log.Println("Invalid Task ID")
