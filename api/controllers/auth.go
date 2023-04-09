@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"flaq.club/api/models"
 	"github.com/MicahParks/keyfunc"
@@ -66,12 +67,16 @@ func (c *Controller) AuthLogin(ctx *fiber.Ctx) error {
 func (c *Controller) AuthCallback(ctx *fiber.Ctx) error {
 	log.Println("Handling callback?")
 	user, err := goth_fiber.CompleteUserAuth(ctx)
+	now := time.Now()
+	user.ExpiresAt = now.Add(24 * 30 * time.Hour)
 	ctx.Cookie(&fiber.Cookie{
 		Name:     "googleauth",
 		HTTPOnly: true,
 		Value:    user.IDToken,
 		Expires:  user.ExpiresAt,
 	})
+	log.Println(user.ExpiresAt)
+	log.Println(time.Now())
 	claims := Claims{}
 	_, err = jwt.ParseWithClaims(user.IDToken, &claims, c.jwk.Keyfunc)
 	userData := models.User{
