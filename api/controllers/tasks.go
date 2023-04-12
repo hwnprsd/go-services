@@ -29,6 +29,7 @@ func (c *Controller) SetupTaskRoutes() {
 
 	fiberw.Post(group, "/schedule/email", c.ScheduleEmail)
 	fiberw.PostWithExtra(group, "/summarize", c.SummarizeBlog, c.InjectUser)
+	fiberw.Get(group, "/update/rss", c.UpdateRssFeed)
 }
 
 type GetTaskDetailsQuery struct {
@@ -126,4 +127,11 @@ func (ctrl *Controller) SummarizeBlog(data SummarizeBlog, user *models.User) (*s
 
 	returnable := fmt.Sprintf("%d", task.ID)
 	return &returnable, nil
+}
+
+func (ctrl Controller) UpdateRssFeed() (*string, error) {
+	message := shared_types.NewUpdateRssData(1)
+	ctrl.MQ.GPTQueue.PublishMessage(message)
+	response := "RSS Update Queued"
+	return &response, nil
 }

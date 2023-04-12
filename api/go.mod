@@ -12,7 +12,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/google/uuid v1.3.0
 	github.com/hwnprsd/go-easy-docs v0.0.0-20230407133452-351764b1fd5f
-	github.com/hwnprsd/shared_types v0.0.0-20230401185159-5ae943c083be
+	github.com/hwnprsd/shared_types v0.0.0-20230411065606-36ecc6781d82
 	github.com/markbates/goth v1.76.1
 	github.com/shareed2k/goth_fiber v0.2.9
 	github.com/streadway/amqp v1.0.0

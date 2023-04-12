@@ -54,7 +54,7 @@ github.com/gorilla/sessions
 # github.com/hwnprsd/go-easy-docs v0.0.0-20230407133452-351764b1fd5f
 ## explicit; go 1.19
 github.com/hwnprsd/go-easy-docs/fiber-wrapper
-# github.com/hwnprsd/shared_types v0.0.0-20230401185159-5ae943c083be
+# github.com/hwnprsd/shared_types v0.0.0-20230411065606-36ecc6781d82
 ## explicit; go 1.19
 github.com/hwnprsd/shared_types
 github.com/hwnprsd/shared_types/status

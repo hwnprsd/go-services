@@ -3,6 +3,8 @@ package gpt
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -11,14 +13,16 @@ import (
 	"github.com/hwnprsd/shared_types"
 	"github.com/sashabaranov/go-openai"
 	"github.com/streadway/amqp"
+	"gorm.io/gorm"
 )
 
 type GptHandler struct {
 	ApiQueue *utils.Queue
+	Db       *gorm.DB
 }
 
-func NewGptHandler(apiQueue *utils.Queue) *GptHandler {
-	return &GptHandler{apiQueue}
+func NewGptHandler(apiQueue *utils.Queue, db *gorm.DB) *GptHandler {
+	return &GptHandler{apiQueue, db}
 }
 
 func (h *GptHandler) HandleMessages(payload *amqp.Delivery) {
@@ -40,41 +44,34 @@ func (h *GptHandler) HandleMessages(payload *amqp.Delivery) {
 		message := shared_types.SummarizeBlogMessage{}
 		json.Unmarshal(payload.Body, &message)
 		log.Println("Summarizing Blog")
-		// Enable when live
-		h.SummarizeBlog(message)
+		err := h.SummarizeBlog(message)
+		if err != nil {
+			log.Println("Error summarizing blog")
+			log.Println(err)
+		}
+		break
+	case shared_types.WORK_TYPE_UPDATE_RSS:
+		message := shared_types.UpdateRssData{}
+		json.Unmarshal(payload.Body, &message)
+		err := h.ReadRSSFeed()
+		if err != nil {
+			log.Println("Error updating RSS Feed")
+			log.Fatal(err)
+		}
 		break
 	}
 	// Just ack everything
 	payload.Ack(false)
 }
 
-func summarize(client *openai.Client, messages []openai.ChatCompletionMessage) (*string, error) {
-	resp, err := client.CreateChatCompletion(
-		context.Background(),
-		openai.ChatCompletionRequest{
-			Model:    openai.GPT3Dot5Turbo,
-			Messages: messages,
-		},
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &resp.Choices[0].Message.Content, nil
-}
-
-func (h *GptHandler) SummarizeBlog(data shared_types.SummarizeBlogMessage) {
-	h.ApiQueue.PublishMessage(shared_types.NewApiCallbackMessage(
-		data.TaskId,
-		"SUMMARY_START",
-		"",
-	))
+func summarizeBlog(blogContent string, wordCount uint) (*string, error) {
 	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
 	client := openai.NewClient(OPENAI_API_KEY)
 
-	paragraphs := (strings.Split(data.ScrapeData, "\n"))
+	paragraphs := (strings.Split(blogContent, "\n"))
 
-	log.Println(paragraphs)
-	log.Println("---------")
+	gist := blogContent[:10]
+	log.Println("Summarizing", gist, "...")
 
 	batches := make([]string, 0)
 
@@ -97,7 +94,7 @@ func (h *GptHandler) SummarizeBlog(data shared_types.SummarizeBlogMessage) {
 	messages := make([]openai.ChatCompletionMessage, 0)
 	contextMessage := openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleSystem,
-		Content: "You are a helpful text summrizing bot. Your job is to summarize of the following content into a short 800 word summary",
+		Content: fmt.Sprintf("You are a helpful text summrizing bot. Your job is to summarize of the following content into a short %d word summary", wordCount),
 	}
 	messages = append(messages, contextMessage)
 
@@ -108,11 +105,11 @@ func (h *GptHandler) SummarizeBlog(data shared_types.SummarizeBlogMessage) {
 			Content: b,
 		})
 		// Modify the messages
-		summary, err := summarize(client, messages)
+		summary, err := summarizeBlogBatch(client, messages)
 		if err != nil {
 			log.Println("Error summarizing")
 			log.Println(err)
-			return
+			return nil, errors.New(fmt.Sprintf("Error summarizing - %e", err))
 		}
 		// summary := fmt.Sprintf("SUMMARY %d", i)
 		recentSummary = *summary
@@ -127,13 +124,39 @@ func (h *GptHandler) SummarizeBlog(data shared_types.SummarizeBlogMessage) {
 		})
 	}
 
-	finalSummary := recentSummary
+	log.Println("Summary complete -", gist)
 
-	log.Println("Summary - ", finalSummary)
+	return &recentSummary, nil
+
+}
+
+func summarizeBlogBatch(client *openai.Client, messages []openai.ChatCompletionMessage) (*string, error) {
+	resp, err := client.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model:    openai.GPT3Dot5Turbo,
+			Messages: messages,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &resp.Choices[0].Message.Content, nil
+}
+
+func (h *GptHandler) SummarizeBlog(data shared_types.SummarizeBlogMessage) error {
+	h.ApiQueue.PublishMessage(shared_types.NewApiCallbackMessage(
+		data.TaskId,
+		"SUMMARY_START",
+		"",
+	))
+	summary, err := summarizeBlog(data.ScrapeData, 800)
+	log.Println("Summary - ", summary)
 
 	h.ApiQueue.PublishMessage(shared_types.NewApiCallbackMessage(
 		data.TaskId,
 		"SUMMARY_COMPLETE",
-		finalSummary,
+		summary,
 	))
+	return err
 }

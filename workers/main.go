@@ -116,7 +116,7 @@ func (h *WorkHandler) ProcessQueue(queue *utils.Queue) {
 				scraperHandler.HandleMessages(&message)
 			}
 			if queue.Name == QUEUE_NAME_GPT {
-				gptHandler := gpt.NewGptHandler(h.ApiQueue)
+				gptHandler := gpt.NewGptHandler(h.ApiQueue, h.Db)
 				log.Printf("Handling GPT Messages from := %s", message.Timestamp)
 				gptHandler.HandleMessages(&message)
 			}
