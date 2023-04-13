@@ -11,6 +11,14 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
+func (handler *GptHandler) CreateAndSendNewsletter() error {
+	// 1. Get all the summaries for a particular date and tag
+	// 2. Further summarize them to create the newsletter content
+	// 3. Draft a newsletter with the relevant links and the summary content appropriately
+	// 5. Email it out
+	return nil
+}
+
 func (handler *GptHandler) ReadRSSFeed() error {
 	// 1. Get all RSS feed URLs
 	// 2. Fetch blogs from these RSS feeds
@@ -19,7 +27,7 @@ func (handler *GptHandler) ReadRSSFeed() error {
 
 	// Get all RSS Feeds
 	rss := []models.RssFeed{}
-	if resp := handler.Db.Where("should_skip = ?", false).Find(&rss); resp.Error != nil {
+	if resp := handler.Db.Where("should_skip = ?", false).Preload("Tags").Find(&rss); resp.Error != nil {
 		return errors.New(fmt.Sprintf("1. Error fetching RSS Feeds, %e", resp.Error))
 	}
 
