@@ -55,8 +55,23 @@ func (h *GptHandler) HandleMessages(payload *amqp.Delivery) {
 		json.Unmarshal(payload.Body, &message)
 		err := h.ReadRSSFeed()
 		if err != nil {
-			log.Println("Error updating RSS Feed")
-			log.Fatal(err)
+			log.Println("Error updating RSS Feed", err)
+		}
+		break
+	case shared_types.WORK_TYPE_CREATE_RSS_NEWSLETTER:
+		message := shared_types.CreateRssNewsletterMessage{}
+		json.Unmarshal(payload.Body, &message)
+		err := h.CreateAndSendNewsletter(message)
+		if err != nil {
+			log.Println("Error creating summary newsletter", err)
+		}
+		break
+	case shared_types.WORK_TYPE_PDF_PARSE_CV:
+		message := shared_types.PdfParseCVMessage{}
+		json.Unmarshal(payload.Body, &message)
+		err := h.ParsePdfCv(message)
+		if err != nil {
+			log.Println("Error extacting or anaylising PDF CV", err)
 		}
 		break
 	}
@@ -65,9 +80,6 @@ func (h *GptHandler) HandleMessages(payload *amqp.Delivery) {
 }
 
 func summarizeBlog(blogContent string, wordCount uint) (*string, error) {
-	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
-	client := openai.NewClient(OPENAI_API_KEY)
-
 	paragraphs := (strings.Split(blogContent, "\n"))
 
 	gist := blogContent[:10]
@@ -105,7 +117,7 @@ func summarizeBlog(blogContent string, wordCount uint) (*string, error) {
 			Content: b,
 		})
 		// Modify the messages
-		summary, err := summarizeBlogBatch(client, messages)
+		summary, err := GetCompletion(messages)
 		if err != nil {
 			log.Println("Error summarizing")
 			log.Println(err)
@@ -130,7 +142,52 @@ func summarizeBlog(blogContent string, wordCount uint) (*string, error) {
 
 }
 
-func summarizeBlogBatch(client *openai.Client, messages []openai.ChatCompletionMessage) (*string, error) {
+// Summarize given article summaries into one newsletter summary
+func SummarizeSummaries(summaries string) (*string, error) {
+	log.Println("Summarizing summaries")
+	messages := make([]openai.ChatCompletionMessage, 0)
+	contextMessage := openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleSystem,
+		Content: fmt.Sprintf("You are a helpful text summrizing bot. You should summarize the given summaries in an unordered list"),
+	}
+	messages = append(messages, contextMessage)
+	summaryMessage := openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleUser,
+		Content: summaries,
+	}
+	messages = append(messages, summaryMessage)
+	ret, err := GetCompletion(messages)
+	log.Println("Summarizing Complete")
+	return ret, err
+}
+
+func GetCvAnalysis(cvText string) (*string, error) {
+	log.Println("Getting information on the CV")
+	messages := make([]openai.ChatCompletionMessage, 0)
+	contextMessage := openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleSystem,
+		Content: fmt.Sprint("You are a helpful CV / Resume analyzer bot. You will be given a CV from a candidate's PDF. You have to return all the information you find strictly in this JSON format { \"name\": \"\", \"email\": \"\", \"dob\": \"\", \"technicalSkills\": [\"\"], \"education\": [{\"institution\": \"\", \"degree\": \"\", \"field\": \"\", \"graduationDate\": \"\"}], \"workExperience\": [ {\"companyName\": \"\", \"duration\": \"\", \"startDate\": \"\", \"position\": \"\", \"location\": \"\", \"responsibilities\": \"\"} ], \"awards\": [\"\"] }"),
+	}
+	messages = append(messages, contextMessage)
+	cvMessage := openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleUser,
+		Content: cvText,
+	}
+	messages = append(messages, cvMessage)
+	ret, err := GetCompletion(messages)
+	log.Println("CV Analysis complete")
+	if err != nil {
+		log.Println(err)
+	}
+	// TODO: Check if the CV is scanned properly
+	return ret, err
+}
+
+// Given a slice of messages, call the openai API and return the response
+func GetCompletion(messages []openai.ChatCompletionMessage) (*string, error) {
+	OPENAI_API_KEY := os.Getenv("OPENAI_API_KEY")
+	client := openai.NewClient(OPENAI_API_KEY)
+
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
@@ -139,6 +196,8 @@ func summarizeBlogBatch(client *openai.Client, messages []openai.ChatCompletionM
 		},
 	)
 	if err != nil {
+		log.Println("OpenAPI Error")
+		// TODO: Check if this is an API error. If so, retry
 		return nil, err
 	}
 	return &resp.Choices[0].Message.Content, nil

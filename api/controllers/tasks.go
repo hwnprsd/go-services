@@ -29,7 +29,9 @@ func (c *Controller) SetupTaskRoutes() {
 
 	fiberw.Post(group, "/schedule/email", c.ScheduleEmail)
 	fiberw.PostWithExtra(group, "/summarize", c.SummarizeBlog, c.InjectUser)
-	fiberw.Get(group, "/update/rss", c.UpdateRssFeed)
+	fiberw.Get(group, "/newsletter/update/rss", c.UpdateRssFeed)
+	fiberw.Get(group, "/newsletter/summary", c.CreateNewsletter)
+	fiberw.PostWithExtra(group, "/cv/analyse", c.ParsePdfCv, c.InjectUser)
 }
 
 type GetTaskDetailsQuery struct {
@@ -134,4 +136,33 @@ func (ctrl Controller) UpdateRssFeed() (*string, error) {
 	ctrl.MQ.GPTQueue.PublishMessage(message)
 	response := "RSS Update Queued"
 	return &response, nil
+}
+
+func (ctrl Controller) CreateNewsletter() (*string, error) {
+	now := time.Now()
+	loc, _ := time.LoadLocation("Local")
+	publishedDate := time.Date(now.Year(), now.Month(), now.Day()-2, 0, 0, 0, 0, loc)
+	message := shared_types.NewCreateRssNewsletterMessage(1, "Technology", publishedDate)
+	ctrl.MQ.GPTQueue.PublishMessage(message)
+	response := "RSS Update Queued"
+	return &response, nil
+}
+
+type ParsePdfCvBody struct {
+	Url string `json:"url"`
+}
+
+func (ctrl Controller) ParsePdfCv(data ParsePdfCvBody, user *models.User) (*string, error) {
+	task := models.Task{
+		Category: "PDF_CV_ANALYSIS",
+		Status:   "PDF_EXTRACT_STARTED",
+		UserID:   user.ID,
+	}
+
+	if r := ctrl.DB.Clauses(clause.Returning{}).Create(&task); r.Error != nil {
+		return nil, fiberw.NewRequestError(400, "Error creating a task", r.Error)
+	}
+	ctrl.MQ.GPTQueue.PublishMessage(shared_types.NewPdfParseMessage(task.ID, data.Url))
+	taskId := fmt.Sprint(task.ID)
+	return &taskId, nil
 }

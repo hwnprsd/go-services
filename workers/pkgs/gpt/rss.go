@@ -8,15 +8,110 @@ import (
 	"time"
 
 	"flaq.club/workers/models"
+	"github.com/hwnprsd/shared_types"
 	"github.com/mmcdole/gofeed"
 )
 
-func (handler *GptHandler) CreateAndSendNewsletter() error {
+func (handler *GptHandler) CreateAndSendNewsletter(data shared_types.CreateRssNewsletterMessage) error {
 	// 1. Get all the summaries for a particular date and tag
 	// 2. Further summarize them to create the newsletter content
 	// 3. Draft a newsletter with the relevant links and the summary content appropriately
 	// 5. Email it out
+
+	newsletterData, err := handler.createNewsletter(data.Tag, data.Date)
+	if err != nil {
+		log.Println("Error Creating Summary Newsletter", err)
+		return err
+	}
+
+	// store newsletter
+	articles := make([]models.Article, 0)
+	for _, article := range newsletterData.Articles {
+		articles = append(articles, models.Article{
+			ID: article.ID,
+		})
+	}
+	newsletter := models.SummaryNewsletter{
+		Summary:  newsletterData.Summary,
+		Articles: articles,
+	}
+
+	if resp := handler.Db.Create(&newsletter); resp.Error != nil {
+		log.Println("Error creating a newsletter", err)
+		return err
+	}
+
 	return nil
+}
+
+type Article struct {
+	Title string
+	Url   string
+	ID    uint
+}
+
+type NewsletterSummmary struct {
+	Summary  string
+	Articles []Article
+}
+
+func (handler *GptHandler) createNewsletter(tagName string, date time.Time) (*NewsletterSummmary, error) {
+	// 1. Fetch all articles by Tag Name
+	// 2. Batch them into groups of 5
+	// 3. Append summaries
+	tag := models.Tag{}
+	if res := handler.Db.Preload("Articles").Where("tag = ?", tagName).First(&tag); res.Error != nil {
+		log.Println(res.Error)
+		return nil, res.Error
+	}
+
+	summaries := make([]string, 0)
+	articles := make([]Article, 0)
+	batchCount := 7
+	count := 0
+	totalCount := 0
+	summaryConcat := ""
+
+	for _, article := range tag.Articles {
+		// Only care for the required date
+		if !article.PublishDate.Equal(date) {
+			continue
+		}
+		totalCount++
+		count++
+		if count >= batchCount {
+			summaries = append(summaries, summaryConcat)
+			summaryConcat = ""
+			count = 0
+		}
+		summaryConcat += article.Summary + "\n\n"
+		articles = append(articles, Article{article.Title, article.Url, article.ID})
+	}
+
+	log.Println(fmt.Printf("Summarizing %d articles summaries", totalCount))
+
+	if len(summaries) == 0 {
+		log.Println("Nothing to summarize")
+		return nil, nil
+	}
+
+	finalSummary := ""
+	for _, summaryConcat = range summaries {
+		summary, err := SummarizeSummaries(summaryConcat)
+		if err != nil {
+			log.Println("Error summarizing the summaries", err)
+			return nil, err
+		}
+		finalSummary += "\n" + *summary
+
+	}
+
+	data := NewsletterSummmary{
+		Summary:  finalSummary,
+		Articles: articles,
+	}
+
+	return &data, nil
 }
 
 func (handler *GptHandler) ReadRSSFeed() error {
