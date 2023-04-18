@@ -83,6 +83,8 @@ github.com/hwnprsd/shared_types v0.0.0-20230414065911-f2022330e891 h1:jPbyzaj6WU
 github.com/hwnprsd/shared_types v0.0.0-20230414065911-f2022330e891/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
 github.com/hwnprsd/shared_types v0.0.0-20230415030138-8db9334fc865 h1:XJNqSUHpouGHzZT/gRhHZVCr3Z4zP/0c117Ai4oUMb8=
 github.com/hwnprsd/shared_types v0.0.0-20230415030138-8db9334fc865/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
+github.com/hwnprsd/shared_types v0.0.0-20230417090255-f95c3cfb244a h1:023LE54KQV666FSVM9dDdKnC07yDUdFIccfubNj3uyg=
+github.com/hwnprsd/shared_types v0.0.0-20230417090255-f95c3cfb244a/go.mod h1:yNSvNDHYHrG8b9DC1C1TgQJyX+vSh8Et39ygLSSOTgE=
 github.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=
 github.com/jackc/pgpassfile v1.0.0/go.mod h1:CEx0iS5ambNFdcRtxPj5JhEz+xB6uRky5eyVu/W2HEg=
 github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b/go.mod h1:vsD4gTJCa9TptPL8sPkXrLZ+hDuNrZCnj29CQpr4X1E=

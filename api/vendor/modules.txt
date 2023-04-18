@@ -51,10 +51,10 @@ github.com/gorilla/securecookie
 # github.com/gorilla/sessions v1.1.1
 ## explicit
 github.com/gorilla/sessions
-# github.com/hwnprsd/go-easy-docs v0.0.0-20230407133452-351764b1fd5f
+# github.com/hwnprsd/go-easy-docs v0.0.0-20230417141235-bae467428937
 ## explicit; go 1.19
 github.com/hwnprsd/go-easy-docs/fiber-wrapper
-# github.com/hwnprsd/shared_types v0.0.0-20230415030138-8db9334fc865
+# github.com/hwnprsd/shared_types v0.0.0-20230417090255-f95c3cfb244a
 ## explicit; go 1.19
 github.com/hwnprsd/shared_types
 github.com/hwnprsd/shared_types/status

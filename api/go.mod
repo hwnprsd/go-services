@@ -11,8 +11,8 @@ require (
 	github.com/gofiber/template v1.7.5
 	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/google/uuid v1.3.0
-	github.com/hwnprsd/go-easy-docs v0.0.0-20230407133452-351764b1fd5f
-	github.com/hwnprsd/shared_types v0.0.0-20230415030138-8db9334fc865
+	github.com/hwnprsd/go-easy-docs v0.0.0-20230417141235-bae467428937
+	github.com/hwnprsd/shared_types v0.0.0-20230417090255-f95c3cfb244a
 	github.com/markbates/goth v1.76.1
 	github.com/shareed2k/goth_fiber v0.2.9
 	github.com/streadway/amqp v1.0.0

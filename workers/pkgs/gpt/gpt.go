@@ -46,7 +46,7 @@ func (h *GptHandler) HandleMessages(payload *amqp.Delivery) {
 		log.Println("Summarizing Blog")
 		err := h.SummarizeBlog(message)
 		if err != nil {
-			log.Println("Error summarizing blog")
+			log.Println("--- Error summarizing blog")
 			log.Println(err)
 		}
 		break
@@ -55,7 +55,7 @@ func (h *GptHandler) HandleMessages(payload *amqp.Delivery) {
 		json.Unmarshal(payload.Body, &message)
 		err := h.ReadRSSFeed()
 		if err != nil {
-			log.Println("Error updating RSS Feed", err)
+			log.Println("--- Error updating RSS Feed", err)
 		}
 		break
 	case shared_types.WORK_TYPE_CREATE_RSS_NEWSLETTER:
@@ -63,7 +63,7 @@ func (h *GptHandler) HandleMessages(payload *amqp.Delivery) {
 		json.Unmarshal(payload.Body, &message)
 		err := h.CreateAndSendNewsletter(message)
 		if err != nil {
-			log.Println("Error creating summary newsletter", err)
+			log.Println("--- Error creating summary newsletter", err)
 		}
 		break
 	case shared_types.WORK_TYPE_PDF_PARSE_CV:
@@ -71,10 +71,20 @@ func (h *GptHandler) HandleMessages(payload *amqp.Delivery) {
 		json.Unmarshal(payload.Body, &message)
 		err := h.ParsePdfCv(message)
 		if err != nil {
-			log.Println("Error extacting or anaylising PDF CV", err)
+			log.Println("--- Error extacting or anaylising PDF CV", err)
 		}
 		break
+	case shared_types.WORK_TYPE_PDF_PARSE_CV_BYTES:
+		message := shared_types.PdfParseCVBytesMessage{}
+		json.Unmarshal(payload.Body, &message)
+		err := h.ParsePdfCvBytes(message)
+		if err != nil {
+			log.Println("--- Error extacting or anaylising PDF CV using Bytes", err)
+		}
+		break
+
 	}
+
 	// Just ack everything
 	payload.Ack(false)
 }

@@ -32,6 +32,9 @@ func (c *Controller) SetupTaskRoutes() {
 	fiberw.Get(group, "/newsletter/update/rss", c.UpdateRssFeed)
 	fiberw.Get(group, "/newsletter/summary", c.CreateNewsletter)
 	fiberw.PostWithExtra(group, "/cv/analyse", c.ParsePdfCv, c.InjectUser)
+
+	fiberw.RawPost(group, "/cv/analyse/upload/sync", c.ParsePdfCvUploadSync)
+	fiberw.Post(group, "/cv/analyse/url/sync", c.ParsePdfCvUrlSync)
 }
 
 type GetTaskDetailsQuery struct {
@@ -165,4 +168,108 @@ func (ctrl Controller) ParsePdfCv(data ParsePdfCvBody, user *models.User) (*stri
 	ctrl.MQ.GPTQueue.PublishMessage(shared_types.NewPdfParseMessage(task.ID, data.Url))
 	taskId := fmt.Sprint(task.ID)
 	return &taskId, nil
+}
+
+type ParsePdfSyncResponse struct {
+	Success    bool   `json:"success"`
+	TaskId     uint   `json:"task_id"`
+	Error      string `json:"error,omitempty"`
+	ErrorCode  uint   `json:"error_code,omitempty"`
+	ParsedData any    `json:"parsed_data"`
+}
+
+func (ctrl Controller) handlePdfAnalysis(t *models.Task) *ParsePdfSyncResponse {
+	for i := 0; i < 50; i++ {
+		t, _ := ctrl.GetTaskDetails(fmt.Sprint(t.ID))
+		if t.Status == "CV_EXTRACTION_STARTED" || t.Status == "CV_EXTRACTION_COMPLETE" {
+			time.Sleep(5 * time.Second)
+			continue
+		} else if t.Status == "CV_EXTRACTION_FAILED_1" {
+			return &ParsePdfSyncResponse{
+				Success:   false,
+				TaskId:    t.ID,
+				Error:     t.Data,
+				ErrorCode: 1,
+			}
+		} else if t.Status == "CV_EXTRACTION_FAILED_2" {
+			return &ParsePdfSyncResponse{
+				Success:   false,
+				TaskId:    t.ID,
+				Error:     t.Data,
+				ErrorCode: 2,
+			}
+		} else if t.Status == "CV_ANALYSIS_FAILED" {
+			return &ParsePdfSyncResponse{
+				Success:   false,
+				TaskId:    t.ID,
+				Error:     t.Data,
+				ErrorCode: 3,
+			}
+		}
+		var data interface{}
+		err := json.Unmarshal([]byte(t.Data), &data)
+		if err != nil {
+			return &ParsePdfSyncResponse{
+				ParsedData: t.Data,
+				Success:    false,
+				TaskId:     t.ID,
+				Error:      "Error parsing json. Try again",
+				ErrorCode:  100,
+			}
+		}
+		return &ParsePdfSyncResponse{
+			ParsedData: data,
+			Success:    true,
+			TaskId:     t.ID,
+		}
+	}
+
+	return &ParsePdfSyncResponse{
+		Success:   false,
+		Error:     "Timed Out",
+		ErrorCode: 4,
+		TaskId:    t.ID,
+	}
+}
+
+func (ctrl Controller) ParsePdfCvUrlSync(data ParsePdfCvBody) (*ParsePdfSyncResponse, error) {
+	task := models.Task{
+		Category: "PDF_CV_ANALYSIS",
+		Status:   "CV_EXTRACTION_STARTED",
+		UserID:   9,
+	}
+
+	if r := ctrl.DB.Clauses(clause.Returning{}).Create(&task); r.Error != nil {
+		return nil, fiberw.NewRequestError(400, "Error creating a task", r.Error)
+	}
+	ctrl.MQ.GPTQueue.PublishMessage(shared_types.NewPdfParseMessage(task.ID, data.Url))
+	return ctrl.handlePdfAnalysis(&task), nil
+}
+
+func (ctrl Controller) ParsePdfCvUploadSync(ctx *fiber.Ctx) error {
+	fileHeader, err := ctx.FormFile("file")
+	if err != nil {
+		return ctx.Status(400).SendString(fmt.Sprint(utils.Map{
+			"success": false,
+			"error":   "Error extracting PDF from form-data. Make sure you send header `content-type: multipart/form-data` with a form filed called `file` with the PDF'",
+		}))
+	}
+	file, _ := fileHeader.Open()
+	fileBytes := make([]byte, fileHeader.Size)
+	_, _ = file.Read(fileBytes)
+	task := models.Task{
+		Category: "PDF_CV_ANALYSIS_BYTES",
+		Status:   "CV_EXTRACTION_STARTED",
+		UserID:   9,
+	}
+
+	if r := ctrl.DB.Clauses(clause.Returning{}).Create(&task); r.Error != nil {
+		return ctx.Status(400).JSON(utils.Map{
+			"success": false,
+			"error":   "Error creating a task for user. Contact adming",
+		})
+	}
+	ctrl.MQ.GPTQueue.PublishMessage(shared_types.NewPdfParseBytesMessage(task.ID, fileBytes))
+	res := ctrl.handlePdfAnalysis(&task)
+	return ctx.Status(200).JSON(*res)
 }
