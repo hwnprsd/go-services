@@ -2,6 +2,7 @@ package mailer
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"strconv"
 	"strings"
@@ -69,6 +70,52 @@ func (h *MailHandler) SendSingleEmail(message shared_types.SendMailMessage) {
 	h.ApiQueue.PublishMessage(endMessage)
 	log.Println("Email sent succesfully")
 
+}
+
+func (h *MailHandler) SendSummaryNewsLetterToList(message shared_types.SendRssNewsletterMessage) error {
+	tag := models.Tag{}
+	if res := h.Db.Preload("Articles").Where("tag = ?", message.Tag).First(&tag); res.Error != nil {
+		log.Println("No tag with tagname ", message.Tag)
+		return errors.New("No tag with the given tagname")
+	}
+	articles := make([]models.Article, 0)
+	for _, article := range tag.Articles {
+		if article.PublishDate.Equal(message.Date) {
+			articles = append(articles, article)
+		}
+	}
+	if len(articles) == 0 {
+		log.Println("There are no article summaries compiled for the given date", message.Date)
+		return errors.New("No articles for the given date")
+	}
+
+	// Get Users who are in the mailing list
+	campaign := models.MailingCampaign{}
+	if res := h.Db.Preload("EmailTemplate").Preload("MailingList.Users").Where("id = ?", message.CampaignId).First(&campaign); res.Error != nil {
+		log.Println("Error finding campaign with ID", message.CampaignId)
+		return errors.New("No campaign with the given campaign ID")
+	}
+
+	newsletterContent := ""
+	titlesAndAuthors := ""
+	preText := "<tr><td><p style=\"font-size:14px;line-height:22px;margin:16px 0;color:#3c4043\">"
+	postText := "</p>"
+
+	for _, article := range articles {
+		newsletterContent += article.Summary + "<br/><br/>"
+		titlesAndAuthors += "<a href=\"" + article.Url + "\">" + article.Title + " by " + article.Authors + "</a>" + "<br/>"
+	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(campaign.MailingList.Users))
+	for _, user := range campaign.MailingList.Users {
+		go h.sendMail(campaign.EmailTemplate.TemplateString, user.EmailAddress, "Your tech roundup", map[string]string{
+			"NEWSLETTER_CONTENT": newsletterContent,
+			"TITLES_AUTHORS":     titlesAndAuthors,
+		}, &wg)
+	}
+
+	return nil
 }
 
 func (h *MailHandler) SendEmailToList(message shared_types.ScheduleEmailsMessage) {
@@ -159,7 +206,9 @@ func (h *MailHandler) sendMail(emailMessage, emailAddress, subject string, templ
 	m.SetHeader("Subject", subject)
 
 	for key, value := range templateValues {
-		emailMessage = strings.ReplaceAll(emailMessage, "{{ "+key+" }}", value)
+		emailMessage = strings.ReplaceAll(emailMessage, "%% "+key+" %%", value)
+		// FIX THIS so your delimiters can be changed
+		// emailMessage = strings.ReplaceAll(emailMessage, "{{ "+key+" }}", value)
 	}
 
 	m.SetBody("text/html", emailMessage)
