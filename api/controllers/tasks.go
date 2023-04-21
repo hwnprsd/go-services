@@ -30,7 +30,8 @@ func (c *Controller) SetupTaskRoutes() {
 	fiberw.Post(group, "/schedule/email", c.ScheduleEmail)
 	fiberw.PostWithExtra(group, "/summarize", c.SummarizeBlog, c.InjectUser)
 	fiberw.Get(group, "/newsletter/update/rss", c.UpdateRssFeed)
-	fiberw.Get(group, "/newsletter/summary", c.CreateNewsletter)
+	fiberw.Get(group, "/newsletter/summary/create", c.CreateRssNewsletter)
+	fiberw.Post(group, "/newsletter/summary/send", c.SendRssNewsletter)
 	fiberw.PostWithExtra(group, "/cv/analyse", c.ParsePdfCv, c.InjectUser)
 
 	fiberw.RawPost(group, "/cv/analyse/upload/sync", c.ParsePdfCvUploadSync)
@@ -62,8 +63,6 @@ type ScheduleEmailBody struct {
 func (ctrl *Controller) ScheduleEmail(body ScheduleEmailBody) (*string, error) {
 	scheduleTime := time.Now().Add(time.Minute * time.Duration(body.MinsLater))
 	// scheduleTime := time.Now()
-	log.Println(time.Now().String())
-	log.Println(scheduleTime.String())
 	message := shared_types.NewScheduleEmailMessage(0, body.CampaignId, scheduleTime, map[string]string{"test": "true"})
 	error := ctrl.MQ.SchedulerQueue.PublishMessage(message)
 
@@ -141,13 +140,30 @@ func (ctrl Controller) UpdateRssFeed() (*string, error) {
 	return &response, nil
 }
 
-func (ctrl Controller) CreateNewsletter() (*string, error) {
+func (ctrl Controller) CreateRssNewsletter() (*string, error) {
 	now := time.Now()
 	loc, _ := time.LoadLocation("Local")
 	publishedDate := time.Date(now.Year(), now.Month(), now.Day()-2, 0, 0, 0, 0, loc)
 	message := shared_types.NewCreateRssNewsletterMessage(1, "Technology", publishedDate)
 	ctrl.MQ.GPTQueue.PublishMessage(message)
 	response := "RSS Update Queued"
+	return &response, nil
+}
+
+type SendRssNewsletterBody struct {
+	Tag               string    `json:"tag"`
+	Date              time.Time `json:"date"`
+	ScheduleMinsLater uint      `json:"schedule_mins_later"`
+	CampaignId        uint      `json:"campaign_id"`
+}
+
+func (ctrl Controller) SendRssNewsletter(body SendRssNewsletterBody) (*string, error) {
+	y, m, d := body.Date.Date()
+	publishedDate := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
+	scheduleTime := time.Now().Add(time.Minute * time.Duration(body.ScheduleMinsLater))
+	message := shared_types.NewSendRssNewsletterMessage(1, body.CampaignId, body.Tag, publishedDate, scheduleTime)
+	ctrl.MQ.GPTQueue.PublishMessage(message)
+	response := "RSS Send Email Message Sent"
 	return &response, nil
 }
 

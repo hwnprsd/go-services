@@ -98,23 +98,28 @@ func (h *MailHandler) SendSummaryNewsLetterToList(message shared_types.SendRssNe
 
 	newsletterContent := ""
 	titlesAndAuthors := ""
-	preText := "<tr><td><p style=\"font-size:14px;line-height:22px;margin:16px 0;color:#3c4043\">"
-	postText := "</p>"
+	preText := "<tr><td>"
+	postText := "</td></tr>"
+	preContent := "<p style=\"font-size:14px;line-height:22px;margin:16px 0;color:#3c4043\">"
+	postContent := "</p>"
 
 	for _, article := range articles {
-		newsletterContent += article.Summary + "<br/><br/>"
+		content := article.Summary
 		titlesAndAuthors += "<a href=\"" + article.Url + "\">" + article.Title + " by " + article.Authors + "</a>" + "<br/>"
+		newsletterContent += preContent + content + postContent
 	}
+
+	newsletterContent = preText + newsletterContent + postText
 
 	wg := sync.WaitGroup{}
 	wg.Add(len(campaign.MailingList.Users))
 	for _, user := range campaign.MailingList.Users {
 		go h.sendMail(campaign.EmailTemplate.TemplateString, user.EmailAddress, "Your tech roundup", map[string]string{
 			"NEWSLETTER_CONTENT": newsletterContent,
+			"NEWSLETTER_INTRO":   "Welcome to your daily dose of tech. Brought to you by Flaq",
 			"TITLES_AUTHORS":     titlesAndAuthors,
 		}, &wg)
 	}
-
 	return nil
 }
 
