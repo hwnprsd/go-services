@@ -143,7 +143,7 @@ func (ctrl Controller) UpdateRssFeed() (*string, error) {
 func (ctrl Controller) CreateRssNewsletter() (*string, error) {
 	now := time.Now()
 	loc, _ := time.LoadLocation("Local")
-	publishedDate := time.Date(now.Year(), now.Month(), now.Day()-2, 0, 0, 0, 0, loc)
+	publishedDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
 	message := shared_types.NewCreateRssNewsletterMessage(1, "Technology", publishedDate)
 	ctrl.MQ.GPTQueue.PublishMessage(message)
 	response := "RSS Update Queued"
@@ -158,11 +158,11 @@ type SendRssNewsletterBody struct {
 }
 
 func (ctrl Controller) SendRssNewsletter(body SendRssNewsletterBody) (*string, error) {
-	y, m, d := body.Date.Date()
+	y, m, d := time.Now().Date()
 	publishedDate := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
 	scheduleTime := time.Now().Add(time.Minute * time.Duration(body.ScheduleMinsLater))
 	message := shared_types.NewSendRssNewsletterMessage(1, body.CampaignId, body.Tag, publishedDate, scheduleTime)
-	ctrl.MQ.GPTQueue.PublishMessage(message)
+	ctrl.MQ.MailerQueue.PublishMessage(message)
 	response := "RSS Send Email Message Sent"
 	return &response, nil
 }

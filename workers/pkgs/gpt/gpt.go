@@ -66,6 +66,7 @@ func (h *GptHandler) HandleMessages(payload *amqp.Delivery) {
 			log.Println("--- Error creating summary newsletter", err)
 		}
 		break
+
 	case shared_types.WORK_TYPE_PDF_PARSE_CV:
 		message := shared_types.PdfParseCVMessage{}
 		json.Unmarshal(payload.Body, &message)

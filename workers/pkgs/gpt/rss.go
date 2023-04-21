@@ -34,6 +34,7 @@ func (handler *GptHandler) CreateAndSendNewsletter(data shared_types.CreateRssNe
 	newsletter := models.SummaryNewsletter{
 		Summary:  newsletterData.Summary,
 		Articles: articles,
+		TagID:    newsletterData.TagId,
 	}
 
 	if resp := handler.Db.Create(&newsletter); resp.Error != nil {
@@ -51,8 +52,10 @@ type Article struct {
 }
 
 type NewsletterSummmary struct {
-	Summary  string
-	Articles []Article
+	Summary       string
+	Articles      []Article
+	TagId         uint
+	PublishedDate time.Time
 }
 
 func (handler *GptHandler) createNewsletter(tagName string, date time.Time) (*NewsletterSummmary, error) {
@@ -107,8 +110,10 @@ func (handler *GptHandler) createNewsletter(tagName string, date time.Time) (*Ne
 	}
 
 	data := NewsletterSummmary{
-		Summary:  finalSummary,
-		Articles: articles,
+		Summary:       finalSummary,
+		Articles:      articles,
+		TagId:         tag.ID,
+		PublishedDate: tag.Articles[0].PublishDate,
 	}
 
 	return &data, nil
