@@ -39,3 +39,17 @@ func NewMintQuizNFTMessage(taskId uint, email string, walletAddress string, toke
 		TokenURI:      tokenUri,
 	}
 }
+
+const WORK_TYPE_CREATE_SC_WALLET = "CREATE_SC_WALLET"
+
+type CreateSmartContractWallet struct {
+	MessagingBase
+	Address string
+}
+
+func CreateSmartContractWalletMessage(taskId uint, ownerAddress string) *CreateSmartContractWallet {
+	return &CreateSmartContractWallet{
+		MessagingBase: *NewMessagingBase(taskId, WORK_TYPE_CREATE_SC_WALLET),
+		Address:       ownerAddress,
+	}
+}

@@ -18,6 +18,7 @@ func (c *Controller) SetupNFTRoutes() {
 	group := fiberw.NewGroup(c.FiberApp, "/nft")
 
 	fiberw.Post(group, "/poap/mint", c.MintPOAP)
+	fiberw.Post(group, "/scw/create", c.CreateSCW)
 }
 
 type MintNftBody struct {
@@ -68,4 +69,15 @@ func (ctrl *Controller) MintPOAP(body MintNftBody) (*models.Task, error) {
 	ctrl.MQ.GifQueue.PublishMessage(*payload2)
 	// ctrl.MQ.NftQueue.PublishMessage(*payload)
 	return &job, nil
+}
+
+type CreateSCWBody struct {
+	OwnerAddress string `json:"owner_address"`
+}
+
+func (ctrl *Controller) CreateSCW(body CreateSCWBody) (*string, error) {
+	done := "done"
+	payload := shared_types.CreateSmartContractWalletMessage(1, body.OwnerAddress)
+	ctrl.MQ.NftQueue.PublishMessage(payload)
+	return &done, nil
 }

@@ -207,7 +207,7 @@ func GetCompletion(messages []openai.ChatCompletionMessage) (*string, error) {
 		},
 	)
 	if err != nil {
-		log.Println("OpenAPI Error")
+		log.Println("OpenAI Error")
 		// TODO: Check if this is an API error. If so, retry
 		return nil, err
 	}

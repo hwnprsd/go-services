@@ -10,7 +10,7 @@ require (
 	github.com/fogleman/gg v1.3.0
 	github.com/go-mail/mail v2.3.1+incompatible
 	github.com/google/uuid v1.2.0
-	github.com/hwnprsd/shared_types v0.0.0-20230417090255-f95c3cfb244a
+	github.com/hwnprsd/shared_types v0.0.0-20230424103828-b7e22f40fff4
 	github.com/lib/pq v1.10.7
 	github.com/sashabaranov/go-openai v1.6.1
 	github.com/streadway/amqp v1.0.0

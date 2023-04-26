@@ -12,6 +12,7 @@ import (
 
 	"flaq.club/workers/pkgs/nft/FlaqInsignia"
 	"flaq.club/workers/pkgs/nft/FlaqPoap"
+	"flaq.club/workers/pkgs/nft/SolaceSCW"
 	"flaq.club/workers/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -61,6 +62,11 @@ func (h *NftMintHandler) HandleMessages(payload *amqp.Delivery) {
 		ownerAddress := common.HexToAddress(message.Address)
 		h.MintInsignia(ownerAddress, message.TokenURI)
 		break
+	case shared_types.WORK_TYPE_CREATE_SC_WALLET:
+		message := shared_types.CreateSmartContractWallet{}
+		json.Unmarshal(payload.Body, &message)
+		ownerAddress := common.HexToAddress(message.Address)
+		h.CreateSmartContractWallet(ownerAddress)
 	}
 	payload.Ack(false)
 }
@@ -228,5 +234,76 @@ func (h *NftMintHandler) MintPoap(message shared_types.MintPoapMessage) {
 	if message.Email != "" {
 		h.MailerQueue.PublishMessage(mailMessage)
 	}
+}
 
+func (h *NftMintHandler) CreateSmartContractWallet(ownerAddress common.Address) error {
+	log.SetPrefix("SCW_WALLET_CREATOR: ")
+	chainIdString, exists := os.LookupEnv("CHAIN_ID")
+	failIfFalse(exists)
+	rpcUrl, exists := os.LookupEnv("ETH_RPC_URL")
+	failIfFalse(exists)
+	factoryContractAddressPartial, exists := os.LookupEnv("FACTORY_CONTRACT_ADDRESS")
+	failIfFalse(exists)
+	privateKeyHex, exists := os.LookupEnv("PRIVATE_KEY")
+	failIfFalse(exists)
+
+	contractAddressString := fmt.Sprintf("0x%s", factoryContractAddressPartial)
+	client, err := ethclient.Dial(rpcUrl)
+	if err != nil {
+		panic(err)
+	}
+
+	privateKey, err := crypto.HexToECDSA(privateKeyHex)
+	if err != nil {
+		log.Println("Error converting Hex to ECDSA")
+		panic(err)
+	}
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+	}
+
+	contractAddress := common.HexToAddress(contractAddressString)
+	instance, err := SolaceSCW.NewSolaceSCW(contractAddress, client)
+	if err != nil {
+		panic(err)
+	}
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+
+	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	chainId, _ := strconv.ParseInt(chainIdString, 10, 64)
+	auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(chainId))
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0)     // in wei
+	auth.GasLimit = uint64(300000) // in units
+	auth.GasPrice = gasPrice
+
+	tx, err := instance.CreateSCW(auth, ownerAddress)
+	if err != nil {
+		log.Println("ERROR Creating SCW", err)
+	} else {
+		log.Printf("tx sent: %s", tx.Hash().Hex())
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	log.Println("Confirming")
+	r, err := bind.WaitMined(ctx, client, tx)
+	if err != nil {
+		log.Println("ERROR Confirming SCW Creation", err)
+	} else {
+		log.Println("Confirmed:", r.TxHash.String())
+	}
+
+	return nil
 }
