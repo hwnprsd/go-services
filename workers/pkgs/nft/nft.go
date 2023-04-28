@@ -9,10 +9,11 @@ import (
 	"math/big"
 	"os"
 	"strconv"
+	"strings"
 
 	"flaq.club/workers/pkgs/nft/FlaqInsignia"
 	"flaq.club/workers/pkgs/nft/FlaqPoap"
-	"flaq.club/workers/pkgs/nft/SolaceSCW"
+	"flaq.club/workers/pkgs/nft/SolaceSCWFactory"
 	"flaq.club/workers/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -21,6 +22,9 @@ import (
 	"github.com/streadway/amqp"
 	"gorm.io/gorm"
 
+	rcom "github.com/athanorlabs/go-relayer/common"
+	contracts "github.com/athanorlabs/go-relayer/impls/mforwarder"
+	"github.com/athanorlabs/go-relayer/relayer"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -67,7 +71,14 @@ func (h *NftMintHandler) HandleMessages(payload *amqp.Delivery) {
 		json.Unmarshal(payload.Body, &message)
 		ownerAddress := common.HexToAddress(message.Address)
 		h.CreateSmartContractWallet(ownerAddress)
+	case shared_types.WORK_TYPE_RELAY_TX:
+		message := shared_types.RelayTxMessage{}
+		json.Unmarshal(payload.Body, &message)
+		userAddress := common.HexToAddress(message.UserAddress)
+		contractAddress := common.HexToAddress(message.ContractAddress)
+		h.RelayTransaction(contractAddress, userAddress, message.Data, message.Signature, message.Nonce)
 	}
+
 	payload.Ack(false)
 }
 
@@ -252,7 +263,6 @@ func (h *NftMintHandler) CreateSmartContractWallet(ownerAddress common.Address) 
 	if err != nil {
 		panic(err)
 	}
-
 	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
 		log.Println("Error converting Hex to ECDSA")
@@ -265,7 +275,7 @@ func (h *NftMintHandler) CreateSmartContractWallet(ownerAddress common.Address) 
 	}
 
 	contractAddress := common.HexToAddress(contractAddressString)
-	instance, err := SolaceSCW.NewSolaceSCW(contractAddress, client)
+	instance, err := SolaceSCWFactory.NewSolaceSCWFactory(contractAddress, client)
 	if err != nil {
 		panic(err)
 	}
@@ -305,5 +315,136 @@ func (h *NftMintHandler) CreateSmartContractWallet(ownerAddress common.Address) 
 		log.Println("Confirmed:", r.TxHash.String())
 	}
 
+	return nil
+}
+
+func (h *NftMintHandler) RelayTransaction(contractAddress common.Address, userAddress common.Address, data, userSignature string, userNonce int64) error {
+	chainIdString, exists := os.LookupEnv("CHAIN_ID")
+	failIfFalse(exists)
+	rpcUrl, exists := os.LookupEnv("ETH_RPC_URL")
+	failIfFalse(exists)
+	privateKeyHex, exists := os.LookupEnv("PRIVATE_KEY")
+	failIfFalse(exists)
+
+	log.Println("ChainID", chainIdString)
+	log.Printf("Data (hash): %s", data)
+	log.Printf("User signature: %s", userSignature)
+
+	client, err := ethclient.Dial(rpcUrl)
+	if err != nil {
+		panic(err)
+	}
+
+	privateKey, err := crypto.HexToECDSA(privateKeyHex)
+	if err != nil {
+		log.Println("Error converting Hex to ECDSA")
+		panic(err)
+	}
+	// publicKey := privateKey.Public()
+	// publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	// if !ok {
+	// 	log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+	// }
+	//
+	// instance, err := SolaceSCW.NewSolaceSCW(contractAddress, client)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	//
+	forwarder, err := contracts.NewIMinimalForwarder(contractAddress, client)
+	r, err := relayer.NewRelayer(&relayer.Config{
+		Ctx:       context.Background(),
+		EthClient: client,
+		Forwarder: contracts.NewIMinimalForwarderWrapped(forwarder),
+		Key:       rcom.NewKeyFromPrivateKey(privateKey),
+		ValidateTransactionFunc: func(_ *rcom.SubmitTransactionRequest) error {
+			// Note: an actual application will likely want to set this
+			return nil
+		},
+	})
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dataString := strings.TrimPrefix(data, "0x")
+	dataBytes := common.Hex2Bytes(dataString)
+	log.Println(dataBytes)
+
+	signatureString := strings.TrimPrefix(userSignature, "0x")
+	signatureBytes := common.Hex2Bytes(signatureString)
+	log.Println(signatureBytes)
+	resp, err := r.SubmitTransaction(&rcom.SubmitTransactionRequest{
+		From:      userAddress,
+		To:        contractAddress,
+		Value:     big.NewInt(0),
+		Signature: signatureBytes,
+		Data:      dataBytes,
+		Nonce:     big.NewInt(int64(userNonce)),
+		Gas:       gasPrice,
+	})
+	if err != nil {
+		log.Println(err)
+	} else {
+		log.Println(resp.TxHash)
+
+	}
+	// fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	//
+	// nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	//
+	// chainId, _ := strconv.ParseInt(chainIdString, 10, 64)
+	//
+	// auth, _ := bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(chainId))
+	// auth.Nonce = big.NewInt(int64(nonce))
+	// auth.Value = big.NewInt(0) // in wei
+	// auth.GasLimit = uint64(300000)
+	// auth.GasPrice = gasPrice
+	//
+	// log.Println(contractAddress, userAddress)
+	// // dataString := strings.TrimPrefix(data, "0x")
+	// // dataBytes := common.Hex2Bytes(dataString)
+	//
+	// req := SolaceSCW.MinimalForwarderForwardRequest{
+	// 	From:  userAddress,
+	// 	To:    contractAddress,
+	// 	Value: big.NewInt(0),
+	// 	Data:  common.Hex2Bytes(data),
+	// 	Nonce: big.NewInt(int64(userNonce)),
+	// 	Gas:   gasPrice,
+	// }
+	//
+	// signatureString := strings.TrimPrefix(userSignature, "0x")
+	// signatureBytes := common.Hex2Bytes(signatureString)
+	//
+	// verified, err := instance.Verify(&bind.CallOpts{}, req, signatureBytes)
+	// log.Println("V", verified)
+	// if !verified {
+	// 	return nil
+	// }
+	// if err != nil {
+	// 	log.Println("FAILURE", err)
+	// 	return err
+	// }
+	//
+	// tx, err := instance.Execute(auth, req, signatureBytes)
+	// if err != nil {
+	// 	log.Println("ERROR Creating SCW", err)
+	// } else {
+	// 	log.Printf("tx sent: %s", tx.Hash().Hex())
+	// }
+	// ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel()
+	// log.Println("Confirming")
+	// r, err := bind.WaitMined(ctx, client, tx)
+	// if err != nil {
+	// 	log.Println("ERROR Confirming SCW Creation", err)
+	// } else {
+	// 	log.Println("Confirmed:", r.TxHash.String())
+	// }
+	//
 	return nil
 }

@@ -19,6 +19,7 @@ func (c *Controller) SetupNFTRoutes() {
 
 	fiberw.Post(group, "/poap/mint", c.MintPOAP)
 	fiberw.Post(group, "/scw/create", c.CreateSCW)
+	fiberw.Post(group, "/scw/relay", c.RelayTx)
 }
 
 type MintNftBody struct {
@@ -78,6 +79,24 @@ type CreateSCWBody struct {
 func (ctrl *Controller) CreateSCW(body CreateSCWBody) (*string, error) {
 	done := "done"
 	payload := shared_types.CreateSmartContractWalletMessage(1, body.OwnerAddress)
+	ctrl.MQ.NftQueue.PublishMessage(payload)
+	return &done, nil
+}
+
+type RelayTxBody struct {
+	UserAddress     string `json:"user_address"`
+	ContractAddress string `json:"contract_address"`
+	Data            string `json:"data"`
+	Signature       string `json:"signature"`
+	Nonce           int64  `json:"nonce"`
+}
+
+func (ctrl *Controller) RelayTx(body RelayTxBody) (*string, error) {
+	done := "done"
+	log.Println("Data", body.Data)
+	log.Println("Sign", body.Signature)
+	log.Println("Nonce", body.Nonce)
+	payload := shared_types.CreateRelayTxMessage(1, body.UserAddress, body.ContractAddress, body.Data, body.Signature, body.Nonce)
 	ctrl.MQ.NftQueue.PublishMessage(payload)
 	return &done, nil
 }

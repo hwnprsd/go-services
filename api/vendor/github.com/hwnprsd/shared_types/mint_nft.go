@@ -53,3 +53,22 @@ func CreateSmartContractWalletMessage(taskId uint, ownerAddress string) *CreateS
 		Address:       ownerAddress,
 	}
 }
+
+const WORK_TYPE_RELAY_TX = "RELAY_TX"
+
+type RelayTxMessage struct {
+	MessagingBase
+	ContractAddress, UserAddress, Data, Signature string
+	Nonce                                         int64
+}
+
+func CreateRelayTxMessage(taskId uint, userAddress, contractAddress, data, signature string, nonce int64) *RelayTxMessage {
+	return &RelayTxMessage{
+		MessagingBase:   *NewMessagingBase(taskId, WORK_TYPE_RELAY_TX),
+		ContractAddress: contractAddress,
+		UserAddress:     userAddress,
+		Data:            data,
+		Signature:       signature,
+		Nonce:           nonce,
+	}
+}
