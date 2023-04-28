@@ -369,11 +369,10 @@ func (h *NftMintHandler) RelayTransaction(contractAddress common.Address, userAd
 
 	dataString := strings.TrimPrefix(data, "0x")
 	dataBytes := common.Hex2Bytes(dataString)
-	log.Println(dataBytes)
 
 	signatureString := strings.TrimPrefix(userSignature, "0x")
 	signatureBytes := common.Hex2Bytes(signatureString)
-	log.Println(signatureBytes)
+
 	resp, err := r.SubmitTransaction(&rcom.SubmitTransactionRequest{
 		From:      userAddress,
 		To:        contractAddress,
