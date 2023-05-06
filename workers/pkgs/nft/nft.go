@@ -13,6 +13,7 @@ import (
 
 	"flaq.club/workers/pkgs/nft/FlaqInsignia"
 	"flaq.club/workers/pkgs/nft/FlaqPoap"
+	"flaq.club/workers/pkgs/nft/SolaceSCW"
 	"flaq.club/workers/pkgs/nft/SolaceSCWFactory"
 	"flaq.club/workers/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -201,6 +202,7 @@ func (h *NftMintHandler) MintPoap(message shared_types.MintPoapMessage) {
 
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
+		log.Println("Error occured")
 		log.Fatal(err)
 	}
 
@@ -329,6 +331,8 @@ func (h *NftMintHandler) RelayTransaction(contractAddress common.Address, userAd
 	log.Println("ChainID", chainIdString)
 	log.Printf("Data (hash): %s", data)
 	log.Printf("User signature: %s", userSignature)
+	log.Printf("Contract Address: %s", contractAddress.Hex())
+	log.Printf("User Address: %s", userAddress.Hex())
 
 	client, err := ethclient.Dial(rpcUrl)
 	if err != nil {
@@ -346,11 +350,14 @@ func (h *NftMintHandler) RelayTransaction(contractAddress common.Address, userAd
 	// 	log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
 	// }
 	//
-	// instance, err := SolaceSCW.NewSolaceSCW(contractAddress, client)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	//
+	instance, err := SolaceSCW.NewSolaceSCW(contractAddress, client)
+	if err != nil {
+		panic(err)
+	}
+
+	nonce, err := instance.GetNonce(&bind.CallOpts{}, userAddress)
+	log.Println("Nonce", nonce)
+
 	forwarder, err := contracts.NewIMinimalForwarder(contractAddress, client)
 	r, err := relayer.NewRelayer(&relayer.Config{
 		Ctx:       context.Background(),
@@ -366,6 +373,7 @@ func (h *NftMintHandler) RelayTransaction(contractAddress common.Address, userAd
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Println("Actual Gas", gasPrice)
 
 	dataString := strings.TrimPrefix(data, "0x")
 	dataBytes := common.Hex2Bytes(dataString)
@@ -380,7 +388,7 @@ func (h *NftMintHandler) RelayTransaction(contractAddress common.Address, userAd
 		Signature: signatureBytes,
 		Data:      dataBytes,
 		Nonce:     big.NewInt(int64(userNonce)),
-		Gas:       gasPrice,
+		Gas:       big.NewInt(int64(10000)),
 	})
 	if err != nil {
 		log.Println(err)
