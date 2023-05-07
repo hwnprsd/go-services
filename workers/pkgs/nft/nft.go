@@ -16,7 +16,10 @@ import (
 	"flaq.club/workers/pkgs/nft/SolaceSCW"
 	"flaq.club/workers/pkgs/nft/SolaceSCWFactory"
 	"flaq.club/workers/utils"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/hwnprsd/shared_types"
 	"github.com/hwnprsd/shared_types/status"
@@ -77,7 +80,8 @@ func (h *NftMintHandler) HandleMessages(payload *amqp.Delivery) {
 		json.Unmarshal(payload.Body, &message)
 		userAddress := common.HexToAddress(message.UserAddress)
 		contractAddress := common.HexToAddress(message.ContractAddress)
-		h.RelayTransaction(contractAddress, userAddress, message.Data, message.Signature, message.Nonce)
+		DumbRelayer(contractAddress, userAddress, message.Data, message.Signature, message.Nonce)
+		// h.RelayTransaction(contractAddress, userAddress, message.Data, message.Signature, message.Nonce)
 	}
 
 	payload.Ack(false)
@@ -454,4 +458,131 @@ func (h *NftMintHandler) RelayTransaction(contractAddress common.Address, userAd
 	// }
 	//
 	return nil
+}
+
+func DumbRelayer(contractAddress common.Address, userAddress common.Address, data, signedData string, userNonce int64) {
+	// chainIdString, exists := os.LookupEnv("CHAIN_ID")
+	// failIfFalse(exists)
+	rpcUrl, exists := os.LookupEnv("ETH_RPC_URL")
+	failIfFalse(exists)
+	privateKeyHex, exists := os.LookupEnv("PRIVATE_KEY")
+	failIfFalse(exists)
+	client, err := ethclient.Dial(rpcUrl)
+	if err != nil {
+		panic(err)
+	}
+
+	privateKey, err := crypto.HexToECDSA(privateKeyHex)
+	if err != nil {
+		log.Println("Error converting Hex to ECDSA")
+		panic(err)
+	}
+
+	// signerAddress, err := recoverSigner(signedData)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	parsedABI, err := abi.JSON(strings.NewReader(SolaceSCW.SolaceSCWABI))
+	if err != nil {
+		log.Println("Error parsing ABI")
+		log.Println(err)
+		return
+	}
+
+	method, ok := parsedABI.Methods["addEphemeralSigner"]
+	if !ok {
+		log.Println("Error getting method addEpehemeralSigner")
+		return
+	}
+
+	log.Println(signedData)
+	signatureString := strings.TrimPrefix(signedData, "0x")
+	signatureBytes := common.Hex2Bytes(signatureString)
+	inputData, err := method.Inputs.Unpack(signatureBytes)
+	if err != nil {
+		log.Println("Error unpacking")
+		log.Println(err)
+	}
+
+	signer := inputData[0].(common.Address)
+	expiryTime := inputData[2].(*big.Int)
+	maxTokenAmount := inputData[3].(*big.Int)
+
+	// Set up the relayer's private key
+	if err != nil {
+		log.Println("Error setting up Privarekey")
+		log.Fatal(err)
+	}
+
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("error casting public key to ECDSA")
+	}
+
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		log.Println("Error getting nonce")
+		log.Println(err)
+	}
+
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Println("Error suggesting gas")
+		log.Println(err)
+	}
+
+	// Estimate the gas required for the function call
+	input, err := method.Inputs.Pack(signer, contractAddress, expiryTime, maxTokenAmount)
+	if err != nil {
+		log.Println("Error Packing")
+		log.Println(err)
+	}
+
+	msg := ethereum.CallMsg{From: fromAddress, To: &contractAddress, GasPrice: gasPrice, Data: input}
+	gasLimit, err := client.EstimateGas(context.Background(), msg)
+	if err != nil {
+		log.Println("Error gas limiting")
+		log.Println(err)
+	}
+
+	tx := types.NewTransaction(nonce, contractAddress, big.NewInt(0), gasLimit, gasPrice, input)
+
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(big.NewInt(1)), privateKey)
+	if err != nil {
+		log.Println("Error sgning transaction")
+		log.Println(err)
+	}
+
+	err = client.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		log.Println("Error sending transaction")
+		log.Println(err)
+	}
+
+	fmt.Printf("Transaction relayed: %s\n", signedTx.Hash().Hex())
+}
+
+func recoverSigner(signedData string) (common.Address, error) {
+	data := common.HexToHash(signedData[:66])
+	signature := common.FromHex(signedData[66:])
+
+	if len(signature) != 65 {
+		return common.Address{}, fmt.Errorf("invalid signature length")
+	}
+
+	if signature[64] >= 27 {
+		signature[64] -= 27
+	}
+
+	publicKey, err := crypto.SigToPub(crypto.Keccak256(data.Bytes()), signature)
+	if err != nil {
+		return common.Address{}, err
+	}
+
+	signerAddress := crypto.PubkeyToAddress(*publicKey)
+
+	return signerAddress, nil
 }
