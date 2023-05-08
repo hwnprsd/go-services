@@ -548,6 +548,7 @@ func DumbRelayer(contractAddress common.Address, userAddress common.Address, dat
 		log.Println(err)
 	}
 
+	// NT
 	tx := types.NewTransaction(nonce, contractAddress, big.NewInt(0), gasLimit, gasPrice, input)
 
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(big.NewInt(1)), privateKey)
