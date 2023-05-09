@@ -80,8 +80,8 @@ func (h *NftMintHandler) HandleMessages(payload *amqp.Delivery) {
 		json.Unmarshal(payload.Body, &message)
 		userAddress := common.HexToAddress(message.UserAddress)
 		contractAddress := common.HexToAddress(message.ContractAddress)
-		DumbRelayer(contractAddress, userAddress, message.Data, message.Signature, message.Nonce)
-		// h.RelayTransaction(contractAddress, userAddress, message.Data, message.Signature, message.Nonce)
+		// DumbRelayer(contractAddress, userAddress, message.Data, message.Signature, message.Nonce)
+		h.RelayTransaction(contractAddress, userAddress, message.Data, message.Signature, message.Nonce)
 	}
 
 	payload.Ack(false)
